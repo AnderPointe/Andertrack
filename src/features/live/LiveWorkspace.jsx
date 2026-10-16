@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ArrowRight, CheckCircle2, Clock, Database, LockKeyhole, LogOut, MapPinned, Package, RefreshCw, ShieldAlert, Truck, Wifi } from 'lucide-react';
 import { supabase, supabaseConfigured } from '../../lib/supabase';
 
@@ -46,6 +46,8 @@ export default function LiveWorkspace({ onDemo }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [sync, setSync] = useState('Not connected');
+  const identityRef = useRef('');
+  const scopeRef = useRef('');
 
   useEffect(() => {
     if (!supabase) { setAuthReady(true); return; }
@@ -53,11 +55,20 @@ export default function LiveWorkspace({ onDemo }) {
     supabase.auth.getSession().then(({ data, error }) => {
       if (!active) return;
       if (error) setError(error.message);
+      identityRef.current = data.session?.user?.id || '';
       setSession(data.session);
       setAuthReady(true);
     });
     const { data: subscription } = supabase.auth.onAuthStateChange((_event, next) => {
-      if (active) setSession(next);
+      if (!active) return;
+      const nextId = next?.user?.id || '';
+      if (nextId !== identityRef.current) {
+        identityRef.current = nextId;
+        scopeRef.current = '';
+        setMemberships([]); setOrganizationId(''); setProfile(null);
+        setAssignments([]); setDrivers([]); setSelected('');
+      }
+      setSession(next);
     });
     return () => { active = false; subscription.subscription.unsubscribe(); };
   }, []);
@@ -82,18 +93,21 @@ export default function LiveWorkspace({ onDemo }) {
   }, [userId]);
 
   const membership = memberships.find(item => item.organization_id === organizationId);
+  scopeRef.current = userId + ':' + organizationId;
   const role = membership?.role || '';
   const isPlanner = role === 'admin' || role === 'dispatcher';
 
   const reload = useCallback(async () => {
     if (!supabase || !userId || !organizationId || !role) return;
     setLoading(true);
+    const requestedScope = userId + ':' + organizationId;
     const requests = [
       supabase.from('at_assignments').select('id,reference,division,customer_name,commodity,pickup_address,dropoff_address,estimated_miles,status,driver_user_id,created_at').eq('organization_id',organizationId).order('created_at',{ascending:false}).limit(150),
       supabase.from('at_driver_profiles').select('user_id,display_name,license_class,license_verified,availability').eq('organization_id',organizationId).limit(200)
     ];
     if (!isPlanner) requests.push(supabase.from('at_driver_profiles').select('user_id,display_name,license_class,license_verified,availability').eq('organization_id',organizationId).eq('user_id',userId).maybeSingle());
     const results = await Promise.all(requests);
+    if (scopeRef.current !== requestedScope) return;
     if (results.some(r => r.error)) setError(results.find(r => r.error).error.message);
     else {
       setAssignments(results[0].data || []);
@@ -129,7 +143,7 @@ export default function LiveWorkspace({ onDemo }) {
       {error && <div className="notice" role="alert"><ShieldAlert size={16}/><span>{error}{error.includes('does not exist') ? ' — Phase 2 database schema has not been deployed.' : ''}</span></div>}
       {loading && <p className="muted" role="status">Refreshing operational data…</p>}
       {memberships.length === 0 ? <section className="panel live-empty"><LockKeyhole size={25}/><h2>Organization access pending</h2><p className="muted">A trusted administrator must assign your user to an organization as an admin, dispatcher, or driver. No customer or shipment data is exposed until access is granted.</p></section> : <>
-        {memberships.length > 1 && <div className="live-org"><label htmlFor="org-selector">Organization</label><select id="org-selector" value={organizationId} onChange={e => { setOrganizationId(e.target.value);setAssignments([]);setProfile(null);setDrivers([]); }}>{memberships.map(m => <option value={m.organization_id} key={m.organization_id}>{m.organization_id.slice(0,8)} · {m.role}</option>)}</select></div>}
+        {memberships.length > 1 && <div className="live-org"><label htmlFor="org-selector">Organization</label><select id="org-selector" value={organizationId} onChange={e => { setOrganizationId(e.target.value);setAssignments([]);setProfile(null);setDrivers([]);setSelected(''); }}>{memberships.map(m => <option value={m.organization_id} key={m.organization_id}>{m.organization_id.slice(0,8)} · {m.role}</option>)}</select></div>}
         <div className="live-meta"><Label tone="info">{role}</Label><span><Wifi size={14}/> {sync}</span><button className="secondary" onClick={reload} disabled={loading}><RefreshCw size={15}/> Refresh</button></div>
         {!isPlanner && !profile && <section className="panel live-empty"><ShieldAlert size={23}/><h2>Driver onboarding incomplete</h2><p className="muted">Your organization must verify your license class and create a driver profile. Assigned work is unavailable until onboarding is complete.</p></section>}
         {(!(!isPlanner && !profile)) && <>
