@@ -22,3 +22,25 @@
 .assignment-actions .action-error,.assignment-actions .action-success{display:flex;align-items:flex-start;gap:7px;border-radius:9px;padding:10px;font-size:12px;line-height:1.5}
 .action-error{color:#ffc0bd;background:#542826}
 .action-success{color:#9af0d3;background:#145348}
+
+/* Phase 4 — organization-scoped fleet mapping and mobile delivery evidence */
+.fleet-panel{margin-bottom:18px}
+.fleet-panel .sectionhead h2,.delivery-workflow .sectionhead h3,.delivery-form h4{display:flex;align-items:center;gap:9px}
+.fleet-summary{display:flex;gap:12px;flex-wrap:wrap;color:#a6c1d7;font-size:12px;margin-bottom:10px}
+.fleet-summary span{background:#0d1b2b;border:1px solid #2b4257;padding:7px 11px;border-radius:20px}
+.fleet-map{height:340px;min-height:250px;width:100%;border:1px solid #36526a;border-radius:12px;background:#142b42;overflow:hidden}
+.fleet-panel .muted{font-size:12px;line-height:1.6}
+.map-disclaimer{color:#8ba7bd;font-size:11px;margin:11px 0 0;line-height:1.5}
+.delivery-workflow{border-top:1px solid #344a5e;margin-top:20px;padding-top:20px}
+.delivery-workflow .sectionhead h3{font-size:15px;margin:0}
+.delivery-workflow .muted{font-size:12px;line-height:1.5}
+.delivery-form{display:grid;gap:10px;padding:12px;margin:13px 0;background:#0d1b2b;border:1px solid #2d425b;border-radius:10px}
+.delivery-form label,.delivery-form h4{font-size:13px;color:#c6d7e6;display:flex;gap:8px;align-items:center;margin:0}
+.delivery-form input:not([type="file"]),.delivery-form textarea{padding:11px 12px;min-height:42px;border:1px solid #40566a;border-radius:9px;background:#12263c;color:#eef6ff;width:100%;font:inherit}
+.delivery-form input[type="file"]{max-width:100%;font-size:12px;color:#bdd1e4}
+.delivery-form input[type="file"]::file-selector-button{background:#244b61;color:#fff;border:0;padding:9px 11px;border-radius:8px;margin-right:12px}
+.delivery-form textarea{resize:vertical;line-height:1.5}
+.delivery-form button{width:100%;min-height:44px}
+.package-list{display:grid;gap:6px;max-height:220px;overflow:auto}
+.package-line{display:flex;justify-content:space-between;align-items:center;gap:12px;border:1px solid #2d4259;border-radius:9px;padding:9px 10px;font-size:12px;overflow-wrap:anywhere}
+@media(max-width:570px){.fleet-map{height:265px}.fleet-panel{padding:13px}.fleet-summary{gap:6px}.fleet-summary span{font-size:10px}.delivery-workflow{margin-top:15px}}

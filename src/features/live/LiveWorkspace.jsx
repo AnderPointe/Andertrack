@@ -2,6 +2,8 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { ArrowRight, CheckCircle2, Clock, Database, LockKeyhole, LogOut, MapPinned, Package, RefreshCw, ShieldAlert, Truck, Wifi } from 'lucide-react';
 import { supabase, supabaseConfigured } from '../../lib/supabase';
 import AssignmentActions from './AssignmentActions.jsx';
+import FleetMap from './FleetMap.jsx';
+import DeliveryWorkflow from './DeliveryWorkflow.jsx';
 
 function Label({ children, tone = '' }) {
   return <span className={`pill ${tone}`}>{children}</span>;
@@ -44,6 +46,8 @@ export default function LiveWorkspace({ onDemo }) {
   const [assignments, setAssignments] = useState([]);
   const [drivers, setDrivers] = useState([]);
   const [vehicles, setVehicles] = useState([]);
+  const [locations, setLocations] = useState([]);
+  const [fleetError, setFleetError] = useState('');
   const [selected, setSelected] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -68,7 +72,7 @@ export default function LiveWorkspace({ onDemo }) {
         identityRef.current = nextId;
         scopeRef.current = '';
         setMemberships([]); setOrganizationId(''); setProfile(null);
-        setAssignments([]); setDrivers([]); setVehicles([]); setSelected('');
+        setAssignments([]); setDrivers([]); setVehicles([]); setLocations([]); setFleetError(''); setSelected('');
       }
       setSession(next);
     });
@@ -78,7 +82,7 @@ export default function LiveWorkspace({ onDemo }) {
   const userId = session?.user?.id || '';
   useEffect(() => {
     if (!supabase || !userId) {
-      setMemberships([]); setOrganizationId(''); setProfile(null); setAssignments([]); setDrivers([]); setVehicles([]);
+      setMemberships([]); setOrganizationId(''); setProfile(null); setAssignments([]); setDrivers([]); setVehicles([]); setLocations([]); setFleetError('');
       return;
     }
     let active = true;
@@ -108,10 +112,23 @@ export default function LiveWorkspace({ onDemo }) {
       supabase.from('at_driver_profiles').select('user_id,display_name,license_class,license_verified,availability').eq('organization_id',organizationId).limit(200),
       supabase.from('at_vehicles').select('id,unit_number,vehicle_type,required_license_class,enabled').eq('organization_id',organizationId).limit(250)
     ];
-    if (!isPlanner) requests.push(supabase.from('at_driver_profiles').select('user_id,display_name,license_class,license_verified,availability').eq('organization_id',organizationId).eq('user_id',userId).maybeSingle());
+    if (isPlanner) {
+      requests.push(supabase.from('driver_location_current')
+        .select('driver_id,company_id,latitude,longitude,unit_number,vehicle_type,status,last_ping_at')
+        .eq('company_id',organizationId).order('last_ping_at',{ascending:false}).limit(300));
+    } else {
+      requests.push(supabase.from('at_driver_profiles')
+        .select('user_id,display_name,license_class,license_verified,availability')
+        .eq('organization_id',organizationId).eq('user_id',userId).maybeSingle());
+    }
     const results = await Promise.all(requests);
     if (scopeRef.current !== requestedScope) return;
-    if (results.some(r => r.error)) setError(results.find(r => r.error).error.message);
+    const coreError = results.slice(0,3).concat(isPlanner ? [] : [results[3]]).find(r => r.error);
+    if (isPlanner) {
+      setFleetError(results[3].error?.message || '');
+      setLocations(results[3].error ? [] : (results[3].data || []));
+    }
+    if (coreError) setError(coreError.error.message);
     else {
       setAssignments(results[0].data || []);
       setDrivers(results[1].data || []);
@@ -147,16 +164,17 @@ export default function LiveWorkspace({ onDemo }) {
       {error && <div className="notice" role="alert"><ShieldAlert size={16}/><span>{error}{error.includes('does not exist') ? ' — Phase 2 database schema has not been deployed.' : ''}</span></div>}
       {loading && <p className="muted" role="status">Refreshing operational data…</p>}
       {memberships.length === 0 ? <section className="panel live-empty"><LockKeyhole size={25}/><h2>Organization access pending</h2><p className="muted">A trusted administrator must assign your user to an organization as an admin, dispatcher, or driver. No customer or shipment data is exposed until access is granted.</p></section> : <>
-        {memberships.length > 1 && <div className="live-org"><label htmlFor="org-selector">Organization</label><select id="org-selector" value={organizationId} onChange={e => { setOrganizationId(e.target.value);setAssignments([]);setProfile(null);setDrivers([]);setVehicles([]);setSelected(''); }}>{memberships.map(m => <option value={m.organization_id} key={m.organization_id}>{m.organization_id.slice(0,8)} · {m.role}</option>)}</select></div>}
+        {memberships.length > 1 && <div className="live-org"><label htmlFor="org-selector">Organization</label><select id="org-selector" value={organizationId} onChange={e => { setOrganizationId(e.target.value);setAssignments([]);setProfile(null);setDrivers([]);setVehicles([]);setLocations([]);setFleetError('');setSelected(''); }}>{memberships.map(m => <option value={m.organization_id} key={m.organization_id}>{m.organization_id.slice(0,8)} · {m.role}</option>)}</select></div>}
         <div className="live-meta"><Label tone="info">{role}</Label><span><Wifi size={14}/> {sync}</span><button className="secondary" onClick={reload} disabled={loading}><RefreshCw size={15}/> Refresh</button></div>
         {!isPlanner && !profile && <section className="panel live-empty"><ShieldAlert size={23}/><h2>Driver onboarding incomplete</h2><p className="muted">Your organization must verify your license class and create a driver profile. Assigned work is unavailable until onboarding is complete.</p></section>}
         {(!(!isPlanner && !profile)) && <>
           {!isPlanner && <section className="panel live-driver"><Truck size={20}/><div><strong>{profile.display_name}</strong><p>License Class {profile.license_class} · {division} workspace · {profile.availability}</p><small>{profile.license_verified ? 'License verification recorded' : 'License verification pending'}</small></div></section>}
           <div className="stats">{[{name:'Visible assignments',value:ordered.length,icon:Package},{name:'In transit',value:ordered.filter(j=>j.status==='in_transit').length,icon:Truck},{name:'Awaiting',value:ordered.filter(j=>['offered','unassigned'].includes(j.status)).length,icon:Clock},{name:'Delivered',value:ordered.filter(j=>j.status==='delivered').length,icon:CheckCircle2}].map(x=><div className="stat" key={x.name}><x.icon size={17}/><strong>{x.value}</strong><span>{x.name}</span></div>)}</div>
-          {ordered.length === 0 ? <section className="panel live-empty"><Package size={26}/><h2>No accessible assignments</h2><p className="muted">{isPlanner?'There are no assignments visible in your organization yet.':'No assignments have been assigned to your account.'}</p></section> : <div className="columns"><section className="panel listpanel"><div className="sectionhead"><h2>{isPlanner?'Organization assignments':division+' assignments'}</h2><Label>{ordered.length} visible</Label></div><div className="cards">{ordered.map(a=><button key={a.id} onClick={()=>setSelected(a.id)} className={'job '+(active?.id===a.id?'selected':'')}><div className="jobrow"><b>{a.reference}</b><Label tone={a.status==='delivered'?'success':'info'}>{displayStatus(a.status)}</Label></div><p className="customer">{a.customer_name} <span>· {a.division}</span></p><p className="path">{a.pickup_address} <ArrowRight size={13}/> {a.dropoff_address}</p><div className="jobfooter"><span>{a.commodity}</span><strong>{a.estimated_miles??'—'} mi</strong></div></button>)}</div></section><section className="panel details"><div className="sectionhead"><h2>Shipment detail</h2><Label tone="info">{active.reference}</Label></div><h3>{active.customer_name}</h3><p className="muted">{active.commodity}</p><div className="route"><MapPinned size={20}/><div><span>{active.pickup_address}</span><i></i><span>{active.dropoff_address}</span></div></div><dl><div><dt>Division</dt><dd>{active.division}</dd></div><div><dt>Status</dt><dd>{displayStatus(active.status)}</dd></div><div><dt>Assigned driver</dt><dd>{driver?.display_name|| (active.driver_user_id?'Driver ID '+active.driver_user_id.slice(0,8):'Unassigned')}</dd></div></dl><AssignmentActions assignment={active} role={role} currentUserId={userId} profile={profile} drivers={drivers} vehicles={vehicles} onChanged={reload}/></section></div>}
+          {isPlanner && <FleetMap locations={locations} error={fleetError} loading={loading}/>}
+          {ordered.length === 0 ? <section className="panel live-empty"><Package size={26}/><h2>No accessible assignments</h2><p className="muted">{isPlanner?'There are no assignments visible in your organization yet.':'No assignments have been assigned to your account.'}</p></section> : <div className="columns"><section className="panel listpanel"><div className="sectionhead"><h2>{isPlanner?'Organization assignments':division+' assignments'}</h2><Label>{ordered.length} visible</Label></div><div className="cards">{ordered.map(a=><button key={a.id} onClick={()=>setSelected(a.id)} className={'job '+(active?.id===a.id?'selected':'')}><div className="jobrow"><b>{a.reference}</b><Label tone={a.status==='delivered'?'success':'info'}>{displayStatus(a.status)}</Label></div><p className="customer">{a.customer_name} <span>· {a.division}</span></p><p className="path">{a.pickup_address} <ArrowRight size={13}/> {a.dropoff_address}</p><div className="jobfooter"><span>{a.commodity}</span><strong>{a.estimated_miles??'—'} mi</strong></div></button>)}</div></section><section className="panel details"><div className="sectionhead"><h2>Shipment detail</h2><Label tone="info">{active.reference}</Label></div><h3>{active.customer_name}</h3><p className="muted">{active.commodity}</p><div className="route"><MapPinned size={20}/><div><span>{active.pickup_address}</span><i></i><span>{active.dropoff_address}</span></div></div><dl><div><dt>Division</dt><dd>{active.division}</dd></div><div><dt>Status</dt><dd>{displayStatus(active.status)}</dd></div><div><dt>Assigned driver</dt><dd>{driver?.display_name|| (active.driver_user_id?'Driver ID '+active.driver_user_id.slice(0,8):'Unassigned')}</dd></div></dl><AssignmentActions assignment={active} role={role} currentUserId={userId} profile={profile} drivers={drivers} vehicles={vehicles} onChanged={reload}/>{!isPlanner && profile && <DeliveryWorkflow assignment={active} organizationId={organizationId} currentUserId={userId} profile={profile} onChanged={reload}/>}</section></div>}
         </>}
       </>}
     </main>
-    <footer>Andertrack Phase 3 Pilot · Assignment actions require approved database RPC deployment</footer>
+    <footer>Andertrack Phase 4 Pilot · GPS and delivery workflows require reviewed RLS and database deployment</footer>
   </div>;
 }
