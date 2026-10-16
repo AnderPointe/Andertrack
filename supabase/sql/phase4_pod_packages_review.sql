@@ -157,6 +157,42 @@ ON storage.objects FOR SELECT TO authenticated USING (
   )
 );
 
+-- Backstop for *any* writer (including trusted services): status cannot
+-- leave the pickup stage with unfinished courier manifest scans, nor reach
+-- delivered without a saved proof record. Row locks serialize scan/status work.
+CREATE FUNCTION at_private.guard_delivery_status()
+RETURNS trigger LANGUAGE plpgsql SECURITY INVOKER SET search_path = ''
+AS $
+BEGIN
+  IF NEW.status IS DISTINCT FROM OLD.status THEN
+    IF OLD.division='Class C' AND OLD.status='at_pickup'
+      AND NEW.status='picked_up' AND EXISTS (
+        SELECT 1 FROM public.at_assignment_packages p
+        WHERE p.organization_id=OLD.organization_id
+          AND p.assignment_id=OLD.id AND p.status='pending'
+      ) THEN
+      RAISE EXCEPTION 'Scan all manifested courier packages before departure';
+    END IF;
+    IF NEW.status='delivered' THEN
+      IF OLD.division='Class C' AND EXISTS (
+        SELECT 1 FROM public.at_assignment_packages p
+        WHERE p.organization_id=OLD.organization_id
+          AND p.assignment_id=OLD.id AND p.status<>'delivered'
+      ) THEN RAISE EXCEPTION 'Courier package manifest is not complete'; END IF;
+      IF NOT EXISTS (
+        SELECT 1 FROM public.at_delivery_proofs p
+        WHERE p.organization_id=OLD.organization_id AND p.assignment_id=OLD.id
+      ) THEN RAISE EXCEPTION 'A verified proof of delivery is required'; END IF;
+    END IF;
+  END IF;
+  RETURN NEW;
+END;
+$;
+
+CREATE TRIGGER at_guard_delivery_status
+BEFORE UPDATE OF status ON public.at_assignments
+FOR EACH ROW EXECUTE FUNCTION at_private.guard_delivery_status();
+
 -- Calls are serialized on each assignment row; immutable package events are
 -- inserted atomically with the package status change.
 CREATE FUNCTION at_private.scan_package(
