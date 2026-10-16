@@ -10,3 +10,15 @@
 .demo-banner{position:sticky;top:0;z-index:20;background:#443016;color:#ffe8b9;display:flex;align-items:center;justify-content:center;gap:20px;flex-wrap:wrap;padding:9px 16px;font-size:12px}
 .demo-banner button{border:1px solid #dfbd78;background:#654720;color:#fff5e4;padding:6px 11px;border-radius:8px}
 @media(max-width:560px){.live-login{margin:12vh 14px;padding:22px}.live-top{justify-content:center}.live-shell .heading{display:block}.live-shell .heading>.secondary{margin-top:14px}.demo-banner{gap:8px}}
+
+/* Phase 3: audited dispatch/driver actions */
+.assignment-actions{border-top:1px solid #30445a;padding-top:19px;margin-top:18px}
+.assignment-actions .sectionhead h3{display:flex;align-items:center;gap:8px}
+.assignment-actions form,.driver-decisions{display:grid;gap:11px}
+.assignment-actions label{font-size:12px;color:#b7c9dc}
+.assignment-actions select{background:#101d2c;color:#ecf6ff;border:1px solid #40536c;border-radius:9px;padding:11px;min-height:44px;width:100%;max-width:100%}
+.assignment-actions .primary,.assignment-actions .secondary{width:100%;min-height:43px}
+.assignment-actions small{line-height:1.5}
+.assignment-actions .action-error,.assignment-actions .action-success{display:flex;align-items:flex-start;gap:7px;border-radius:9px;padding:10px;font-size:12px;line-height:1.5}
+.action-error{color:#ffc0bd;background:#542826}
+.action-success{color:#9af0d3;background:#145348}
