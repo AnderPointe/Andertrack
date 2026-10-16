@@ -18,7 +18,7 @@ function Login({ onDemo }) {
     setError(''); setBusy(true);
     const { error: authError } = await supabase.auth.signInWithOtp({
       email: email.trim(),
-      options: { emailRedirectTo: window.location.origin },
+      options: { emailRedirectTo: window.location.origin, shouldCreateUser: false },
     });
     setBusy(false);
     if (authError) setError(authError.message);
