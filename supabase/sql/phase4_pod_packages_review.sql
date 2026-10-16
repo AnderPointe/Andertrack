@@ -109,6 +109,13 @@ INSERT INTO storage.buckets (id,name,public,file_size_limit,allowed_mime_types)
 VALUES ('at-delivery-evidence','at-delivery-evidence',false,10485760,
   ARRAY['image/jpeg','image/png','image/webp'])
 ON CONFLICT (id) DO NOTHING;
+DO $
+BEGIN
+  IF EXISTS (SELECT 1 FROM storage.buckets
+             WHERE id='at-delivery-evidence' AND public=true) THEN
+    RAISE EXCEPTION 'Delivery evidence bucket must be private';
+  END IF;
+END $;
 
 -- Upload path: org_uuid/assignment_uuid/driver_auth_uuid/random_uuid.(jpg|png|webp)
 -- Only the driver assigned to an IN TRANSIT load may upload.
@@ -174,6 +181,11 @@ BEGIN
       WHERE organization_id=v_assignment.organization_id
         AND user_id=v_actor AND role='driver'
     ) THEN RAISE EXCEPTION 'Courier assignment authorization required'; END IF;
+  IF NOT EXISTS (
+    SELECT 1 FROM public.at_driver_profiles d
+    WHERE d.organization_id=v_assignment.organization_id
+      AND d.user_id=v_actor AND d.license_verified=true
+  ) THEN RAISE EXCEPTION 'Driver license verification required'; END IF;
   IF p_scan_type='pickup' AND v_assignment.status='at_pickup' THEN
     v_next := 'picked_up';
   ELSIF p_scan_type='delivery' AND v_assignment.status='in_transit' THEN
