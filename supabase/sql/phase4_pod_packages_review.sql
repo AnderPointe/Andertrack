@@ -109,13 +109,13 @@ INSERT INTO storage.buckets (id,name,public,file_size_limit,allowed_mime_types)
 VALUES ('at-delivery-evidence','at-delivery-evidence',false,10485760,
   ARRAY['image/jpeg','image/png','image/webp'])
 ON CONFLICT (id) DO NOTHING;
-DO $
+DO $$
 BEGIN
   IF EXISTS (SELECT 1 FROM storage.buckets
              WHERE id='at-delivery-evidence' AND public=true) THEN
     RAISE EXCEPTION 'Delivery evidence bucket must be private';
   END IF;
-END $;
+END $$;
 
 -- Upload path: org_uuid/assignment_uuid/driver_auth_uuid/random_uuid.(jpg|png|webp)
 -- Only the driver assigned to an IN TRANSIT load may upload.
@@ -162,7 +162,7 @@ ON storage.objects FOR SELECT TO authenticated USING (
 -- delivered without a saved proof record. Row locks serialize scan/status work.
 CREATE FUNCTION at_private.guard_delivery_status()
 RETURNS trigger LANGUAGE plpgsql SECURITY INVOKER SET search_path = ''
-AS $
+AS $$
 BEGIN
   IF NEW.status IS DISTINCT FROM OLD.status THEN
     IF OLD.division='Class C' AND OLD.status='at_pickup'
@@ -187,7 +187,7 @@ BEGIN
   END IF;
   RETURN NEW;
 END;
-$;
+$$;
 
 CREATE TRIGGER at_guard_delivery_status
 BEFORE UPDATE OF status ON public.at_assignments
