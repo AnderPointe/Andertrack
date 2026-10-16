@@ -1,0 +1,12 @@
+.live-shell{min-height:100vh;color:#e7f2ff;background:radial-gradient(ellipse at 80% 0%,#172b44 0%,#0a111c 46%)}
+.live-top{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:18px clamp(16px,3vw,42px);background:#0b1421;border-bottom:1px solid #243449;flex-wrap:wrap}
+.live-top-actions,.live-meta{display:flex;gap:10px;align-items:center;flex-wrap:wrap}.live-meta{margin:0 0 18px}.live-meta>span:not(.pill){color:#9eb8cc;display:flex;align-items:center;gap:5px;font-size:12px}.live-meta .secondary,.live-top-actions .secondary{padding:8px 12px;font-size:12px}
+.live-login{max-width:460px;margin:10vh auto;padding:30px;display:flex;flex-direction:column;align-items:flex-start;gap:13px}
+.live-login h1{font-size:25px;margin:0}.live-login>p{font-size:14px;line-height:1.6}.live-form{display:flex;flex-direction:column;gap:10px;width:100%}.live-form label{font-size:13px;color:#bfd0e1}.live-form input,.live-org select{background:#0e1929;color:#fff;border:1px solid #40556c;padding:12px;border-radius:9px;width:100%}
+.live-login .secondary{width:100%}.live-message{padding:13px;border-radius:9px;background:#194238;color:#8fe2cb;display:flex;gap:9px;font-size:13px;line-height:1.5}.live-error{color:#ffb4a4;font-size:13px}.live-separator{width:100%;text-align:center;color:#8fa3bc;font-size:12px;padding:8px}.live-loading{padding:80px;text-align:center;color:#b4c9da}
+.live-empty{padding:35px;text-align:center;display:flex;align-items:center;flex-direction:column;gap:8px}.live-empty h2{margin:5px 0;font-size:18px}.live-empty p{max-width:560px;line-height:1.6}
+.live-org{display:flex;align-items:center;gap:12px;margin-bottom:16px}.live-org label{font-size:13px;color:#b4c5d8}.live-org select{max-width:320px}
+.live-driver{display:flex;gap:13px;margin-bottom:18px;align-items:center}.live-driver p{margin:3px 0;color:#abbfd3;font-size:13px}.live-driver small{color:#60daca}
+.demo-banner{position:sticky;top:0;z-index:20;background:#443016;color:#ffe8b9;display:flex;align-items:center;justify-content:center;gap:20px;flex-wrap:wrap;padding:9px 16px;font-size:12px}
+.demo-banner button{border:1px solid #dfbd78;background:#654720;color:#fff5e4;padding:6px 11px;border-radius:8px}
+@media(max-width:560px){.live-login{margin:12vh 14px;padding:22px}.live-top{justify-content:center}.live-shell .heading{display:block}.live-shell .heading>.secondary{margin-top:14px}.demo-banner{gap:8px}}
