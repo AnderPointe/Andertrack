@@ -6,6 +6,7 @@ import {
   ShieldCheck, Sun, Truck, Users, Wifi, X, Zap,
 } from 'lucide-react';
 import FleetMap from './FleetMap.jsx';
+import './command-center.css';
 import DispatchRequestQueue from './DispatchRequestQueue.jsx';
 import AssignmentActions from './AssignmentActions.jsx';
 
