@@ -11,7 +11,7 @@ The two user-provided images `Tractor Dashboard.webp` and `Delivery Dasboard.jpe
 ## Interactive real 3D rendering
 - Uses **Three.js** WebGL (no stock screenshot overlays or fake CSS-only tilt) with five original *procedural* vehicle categories:
   tractor/sleeper, box truck, cargo van, hotshot/pickup-trailer and pickup truck.
-- Controls: drag to orbit, front/side/three-quarter cameras, auto-rotate on/off, zoom and five color swatches. User actions affect the client preview only.
+- Controls: drag to orbit, front/side/three-quarter cameras, auto-rotate on/off, zoom and five color swatches. A make/model **concept selector** offers Volvo VNL, Freightliner Cascadia, Kenworth/Peterbilt tractors, Freightliner M2/Isuzu box trucks, Ford Transit/Mercedes Sprinter vans, and Ford/Ram pickups. Presets change the generic body category and an illustrative title, NOT an exact OEM model. User actions affect the client preview only.
 - Original generic geometry includes individual tires, chrome rims, cabin/glass, cargo sections, lights, accents and shadow. These are **not licensed manufacturer CAD/GLB** and cannot be represented as an exact digital twin of a specific VIN.
 - Browser without WebGL gets a usable no-3D fallback.
 - WebGL geometry/materials and renderer are disposed upon vehicle or page switch; no model network fetch or third-party tracking. Reduced-motion settings disable the default auto rotation.
@@ -41,3 +41,5 @@ Current production `at_vehicles` has `unit_number, vehicle_type, required_licens
 4. Signed-in driver test: never show another driver's assigned equipment; dispatcher can view only their organization.
 5. Migration SQL reviewed and applied separately before adding real inventory make/model data.
 6. For photorealistic **exact** Volvo/Freightliner/Kenworth digital twins, obtain properly licensed per-model glTF/GLB files, map by validated manufacturer/model/year and run a separate review for size, license and IP compliance.
+
+- The sample dashboard opens on the brighter Delivery Overview by default to show the user-requested design; authenticated production landing remains on the existing overview to avoid surprising active operations.
