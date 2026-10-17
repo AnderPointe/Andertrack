@@ -6,6 +6,24 @@ export const VEHICLE_FORMS=Object.freeze([
   {id:'hotshot',label:'Hotshot rig',subtitle:'Pickup + equipment trailer',cargo:'Hotshot / open deck'},
   {id:'pickup',label:'Pickup truck',subtitle:'Light-duty transport',cargo:'Personal / courier'},
 ]);
+export const VEHICLE_MODEL_PRESETS=Object.freeze([
+  {id:'volvo-vnl',make:'Volvo',model:'VNL 760',form:'tractor'},
+  {id:'freightliner-cascadia',make:'Freightliner',model:'Cascadia',form:'tractor'},
+  {id:'kenworth-t680',make:'Kenworth',model:'T680',form:'tractor'},
+  {id:'peterbilt-579',make:'Peterbilt',model:'579',form:'tractor'},
+  {id:'freightliner-m2',make:'Freightliner',model:'M2 106',form:'box_truck'},
+  {id:'isuzu-npr',make:'Isuzu',model:'NPR',form:'box_truck'},
+  {id:'ford-transit',make:'Ford',model:'Transit 350',form:'cargo_van'},
+  {id:'mercedes-sprinter',make:'Mercedes-Benz',model:'Sprinter 2500',form:'cargo_van'},
+  {id:'ford-f350',make:'Ford',model:'F-350',form:'hotshot'},
+  {id:'ram-3500',make:'Ram',model:'3500',form:'hotshot'},
+  {id:'ford-f150',make:'Ford',model:'F-150',form:'pickup'},
+]);
+export function previewPresetForVehicle(vehicle) {
+  const make=String(vehicle?.make||'').trim().toLowerCase();
+  const model=String(vehicle?.model||'').trim().toLowerCase();
+  return VEHICLE_MODEL_PRESETS.find(x=>x.make.toLowerCase()===make&&x.model.toLowerCase()===model)?.id||'';
+}
 export const VEHICLE_COLORS=Object.freeze([
   {id:'arctic',name:'Arctic White',hex:'#dee9e8'},
   {id:'emerald',name:'Emerald Green',hex:'#2dbd85'},
