@@ -100,3 +100,35 @@ export function dutyScenarioCsv(segments=[],name='Sample driver') {
     ...segments.map(x=>['SIMULATED - NOT AN ELD RECORD',name,x.start,x.end,x.status,x.durationMinutes])];
   return '\uFEFF'+rows.map(row=>row.map(csvCell).join(',')).join('\r\n');
 }
+
+/** Read-only live mission labels. Does not advance assignments or infer hidden audit events. */
+export function nextDriverMissionStatus(assignment, now=Date.now()) {
+  const status=assignment?.status||'unknown';
+  const state={
+    unassigned:['Waiting for dispatch','No driver assignment is recorded.'],
+    offered:['Offer awaiting decision','Review the server-authorized offer below.'],
+    accepted:['Proceed to pickup','Report arrival using the authorized driver action.'],
+    at_pickup:['Verify pickup','Record pickup and required package custody scans.'],
+    picked_up:['Ready for transit','Start the delivery route through the authorized action.'],
+    in_transit:['Deliver and capture proof','Complete required parcel scans and private ePOD evidence.'],
+    delivered:['Delivery completed','Review recorded proof status in the delivery workflow.'],
+    cancelled:['Assignment cancelled','Contact dispatch for reassignment.'],
+  }[status]||['Status requires review','Refresh and check with dispatch.'];
+  const when=assignment?.scheduled_delivery_at;
+  const millis=when?Date.parse(when):NaN;
+  const timed=Number.isFinite(millis);
+  return {status,label:state[0],instructions:state[1],
+    scheduleKind:!timed?'unscheduled':status==='delivered'?'completed':
+      millis<now?'past-due':millis-now<=2*3600_000?'approaching':'scheduled',
+    scheduledDeliveryAt:timed?when:null};
+}
+
+export function liveDriverMissionCounts(assignments=[]) {
+  const items=Array.isArray(assignments)?assignments:[];
+  return {
+    total:items.length,
+    active:items.filter(x=>['accepted','at_pickup','picked_up','in_transit'].includes(x.status)).length,
+    offers:items.filter(x=>x.status==='offered').length,
+    delivered:items.filter(x=>x.status==='delivered').length,
+  };
+}
