@@ -3,7 +3,7 @@ import {
   Activity, ArrowDownRight, ArrowRight, ArrowUpRight, BarChart3, Bell, CheckCircle2,
   ChevronRight, CircleHelp, Clock3, Command, Database, Filter, LayoutDashboard, LockKeyhole,
   LogOut, MapPinned, Menu, Moon, Package, Radio, RefreshCw, Route, Search, Settings2,
-  ShieldCheck, Sun, Truck, Users, Wifi, X, Zap, Sparkles, Download, Keyboard, History,
+  ShieldCheck, Sun, Truck, Users, Wifi, X, Zap, Sparkles, Download, Keyboard, History, HeartPulse,
 } from 'lucide-react';
 import FleetMap from './FleetMap.jsx';
 import { ACTIVE_STATUSES, freshGpsPosition, visibleShipments, selectedVisibleShipment } from '../../lib/operations.js';
@@ -17,11 +17,13 @@ import DeliveryWorkflow from './DeliveryWorkflow.jsx';
 import ShipmentJourney from './ShipmentJourney.jsx';
 import FleetIntelligence from './FleetIntelligence.jsx';
 import DispatchPlanner from './DispatchPlanner.jsx';
+import DriverCockpit from './DriverCockpit.jsx';
 
 const NAV = [
   { id: 'overview', label: 'Overview', icon: LayoutDashboard },
   { id: 'tracking', label: 'Live tracking', icon: MapPinned },
   { id: 'intelligent-fleet', label: 'Fleet intelligence', icon: Radio },
+  { id: 'driver-cockpit', label: 'Driver Cockpit & HOS', icon: HeartPulse },
   { id: 'dispatch', label: 'Dispatch center', icon: Route },
   { id: 'dispatch-planner', label: 'Dispatch optimization', icon: Sparkles },
   { id: 'journeys', label: 'Shipment journeys', icon: History },
@@ -310,6 +312,7 @@ export default function OpsCommandCenter({
             <h1>{view==='overview'?'Operations at a glance':NAV.find(n=>n.id===view)?.label}</h1>
             <p>{view==='overview'?'Everything moving, everyone connected. One command center.':
               view==='tracking'?'Real-time fleet visibility, location history and live operational context.':
+              view==='driver-cockpit'?'Authorized driver delivery controls and transparent ELD, payroll and telemetry integration readiness.':
               view==='intelligent-fleet'?'Replay recorded GPS traces, review telemetry quality and inspect local monitoring zones.':
               view==='dispatch'?'Manage the waiting line, plan assignments and follow every load.':
               view==='dispatch-planner'?'Screen eligible driver and equipment matches while preserving FIFO priority.':
@@ -381,6 +384,11 @@ export default function OpsCommandCenter({
               </button>):<div className="at-empty-list"><Radio size={24}/><strong>No GPS records available</strong><span>Location markers are displayed only for authorized, reported positions.</span></div>}
             </div>
           </>}
+          {view==='driver-cockpit'&&<DriverCockpit
+            key={organizationId+':'+userId+':'+(isDemo?'demo':'live')}
+            assignments={ordered} drivers={drivers} vehicles={vehicles} locations={locations}
+            organizationId={organizationId} currentUserId={userId} role={role}
+            profile={profile} reload={reload} isDemo={isDemo}/>}
           {view==='dispatch-planner'&&<DispatchPlanner
             key={organizationId+':'+userId+':'+(isDemo?'demo':'live')}
             assignments={ordered} drivers={drivers} vehicles={vehicles} locations={locations}
