@@ -8,6 +8,7 @@ import AssignmentActions from './AssignmentActions.jsx';
 import DeliveryWorkflow from './DeliveryWorkflow.jsx';
 import FleetMap from './FleetMap.jsx';
 import HolographicHud from './HolographicHud.jsx';
+import ArcviewCinema from './ArcviewCinema.jsx';
 import { validGpsPosition, freshGpsPosition } from '../../lib/operations.js';
 import {
   DEMO_PEOPLE,DUTY_STATES,safeDutyLog,setDemoDutySlot,formatHrsMinutes,
@@ -141,6 +142,12 @@ export default function DriverCockpit({
     </div>
 
     <HolographicHud key={isDemo ? 'sample-hud:'+person.id : 'driver-hud:'+currentUserId}
+      isDemo={isDemo} person={isDemo?person:null} dutyStatus={isDemo?dutyStatus:null}
+      location={isDemo ? sampleLocation : isDriver ? reportedGps : null}
+      assignment={isDemo ? detail : isDriver ? shipment : null}
+      locked={!isDemo&&!isDriver}/>
+
+    <ArcviewCinema key={isDemo ? 'cinema-demo:'+person.id : 'cinema-driver:'+currentUserId}
       isDemo={isDemo} person={isDemo?person:null} dutyStatus={isDemo?dutyStatus:null}
       location={isDemo ? sampleLocation : isDriver ? reportedGps : null}
       assignment={isDemo ? detail : isDriver ? shipment : null}
