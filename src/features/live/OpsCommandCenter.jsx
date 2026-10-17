@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
   Activity, ArrowDownRight, ArrowRight, ArrowUpRight, BarChart3, Bell, CheckCircle2,
   ChevronRight, CircleHelp, Clock3, Command, Database, Filter, LayoutDashboard, LockKeyhole,
@@ -181,7 +181,8 @@ export default function OpsCommandCenter({
   loading=false, sync='Not connected', reload=()=>{}, onDemo=()=>{}, onSignOut=()=>{},
 }) {
   const [view,setView]=useState('overview');
-  const [theme,setTheme]=useState('dark');
+  const [theme,setTheme]=useState(() => { try { return localStorage.getItem('andertrack_ui_theme') === 'light' ? 'light' : 'dark'; } catch { return 'dark'; } });
+  useEffect(() => { try { localStorage.setItem('andertrack_ui_theme',theme); } catch { /* Storage may be unavailable. */ } },[theme]);
   const [query,setQuery]=useState('');
   const [filter,setFilter]=useState('all');
   const [selectedId,setSelectedId]=useState('');
@@ -235,8 +236,9 @@ export default function OpsCommandCenter({
           <span className="at-breadcrumb">WORKSPACE</span><ChevronRight size={14}/><strong>{NAV.find(n=>n.id===view)?.label}</strong>
         </div>
         <div className="at-topbar-actions">
-          <label className="at-global-search"><Search size={17}/><input value={query} onChange={e=>setQuery(e.target.value)}
+          <label className="at-global-search"><Search size={17}/><input value={query} onChange={e=>{setQuery(e.target.value);if(e.target.value.trim())open('dispatch');}}
             placeholder="Search loads, locations, customers..." aria-label="Search shipments"/></label>
+          <button className="at-icon-button at-alert-shortcut" onClick={()=>open('dispatch')} title="View dispatch queue" aria-label="View dispatch notifications"><Bell size={19}/>{dispatchRequests.length>0&&<span className="at-notification-count">{dispatchRequests.length}</span>}</button>
           <button className="at-icon-button" onClick={()=>setTheme(t=>t==='dark'?'light':'dark')} title="Toggle light/dark appearance"
             aria-label="Toggle theme">{theme==='dark'?<Sun size={19}/>:<Moon size={19}/>}</button>
           <button className="at-icon-button" onClick={reload} disabled={loading} title="Refresh operational data" aria-label="Refresh data"><RefreshCw size={18} className={loading?'at-spinning':''}/></button>
