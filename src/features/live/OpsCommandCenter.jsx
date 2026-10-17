@@ -99,7 +99,7 @@ function ShipmentDetail({ active, driver, organizationId, role, currentUserId, p
         <DeliveryWorkflow key={organizationId + ':' + active.id} assignment={active}
           organizationId={organizationId} currentUserId={currentUserId}
           role={role} profile={profile} onChanged={reload}/>
-      </> : <p className="at-demo-note"><ShieldCheck size={15}/> Preview only. Assignment and evidence actions are disabled for sample data.</p>}
+      </> : <DeliveryWorkflow isDemo assignment={active} organizationId="demo-only" currentUserId="demo-only" role="admin" profile={null}/>}
     </>}
   </section>;
 }
