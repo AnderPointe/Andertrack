@@ -1,0 +1,164 @@
+/* Light logistics workspaces inspired by supplied Horizon/Ship dashboard references */
+.at-modern{--md-bg:#f7f9f7;--md-paper:#fff;--md-line:#e2e9e4;--md-ink:#1f3028;
+ --md-subtle:#7d8c83;--md-green:#008d50;--md-mint:#dcf8e7;
+ color:var(--md-ink);background:var(--md-bg);border:1px solid #e2e9e3;border-radius:20px;
+ padding:18px;display:grid;gap:18px;min-width:0;box-shadow:0 12px 38px #3f534214}
+.at-modern *{box-sizing:border-box}
+.at-modern button,.at-modern select,.at-modern input{font:inherit}
+.at-modern button{cursor:pointer}
+.at-modern-header{display:flex;align-items:center;justify-content:space-between;gap:18px;flex-wrap:wrap}
+.at-modern-brand{display:flex;align-items:center;gap:12px}
+.at-modern-brand>span{display:grid;place-items:center;border-radius:11px;background:#057d4c;
+ width:44px;height:44px;color:#fff;flex-shrink:0}
+.at-modern-brand small,.at-modern-section-title>div>span,.at-modern-delivery-hero-copy>span{
+ display:block;color:#568675;font-size:9px;letter-spacing:1.1px;font-weight:850}
+.at-modern h2{font-size:24px;letter-spacing:-.8px;color:#182f27;margin:5px 0}
+.at-modern-header p,.at-modern-section-title p{font-size:11px;color:#7a8c83;line-height:1.6;margin:5px 0 0}
+.at-modern-header-actions,.at-modern-toolbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.at-modern-pill{display:inline-flex;align-items:center;gap:7px;padding:8px 10px;border-radius:20px;
+ border:1px solid #d3ead9;background:#eaf8ef;color:#22784c;font-size:10px;font-weight:780;white-space:nowrap}
+.at-modern-primary{display:inline-flex;align-items:center;justify-content:center;gap:7px;border:0;
+ border-radius:10px;background:#07864f;color:#fff;padding:12px 16px;font-size:11px;font-weight:800}
+.at-modern-primary:hover{background:#0a995b}
+.at-modern-overview,.at-modern-warehouse,.at-driver-equipment-profiles{background:var(--md-paper);
+ border:1px solid var(--md-line);border-radius:15px;padding:16px;min-width:0}
+.at-modern-section-title{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:15px}
+.at-modern-section-title h3{font-size:16px;letter-spacing:-.4px;color:#1f3126;margin:0}
+.at-modern-section-title>span{font-size:10px;color:#738778}
+.at-modern-kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:0}
+.at-modern-kpi{display:grid;gap:10px;padding:8px 16px;border-left:1px solid #dfe9e2;min-width:0}
+.at-modern-kpi:first-child{border-left:3px solid #bcd5c6}
+.at-modern-kpi>div{display:flex;align-items:center;gap:8px;color:#647e6e;font-size:11px}
+.at-modern-kpi>div svg{color:#22885e;flex-shrink:0}
+.at-modern-kpi strong{font-size:29px;color:#193129;letter-spacing:-1px;font-weight:750}
+.at-modern-kpi small{color:#8a9a8e;font-size:10px}
+.at-modern-live-disclaimer{display:flex;align-items:start;gap:7px;font-size:10px;line-height:1.7;
+ color:#71877c;margin:14px 0 0}
+.at-modern-live-disclaimer svg,.at-modern-footnote svg{color:#179966;flex-shrink:0}
+.at-modern-toolbar label,.at-modern-search{display:flex;align-items:center;gap:7px;border:1px solid #e0e9e3;
+ border-radius:9px;padding:0 10px;background:#fff}
+.at-modern-toolbar label{flex:1;min-width:180px}
+.at-modern-toolbar label svg,.at-modern-search svg{color:#7e8c83}
+.at-modern-toolbar input,.at-modern-search input{border:0;outline:none!important;background:transparent!important;
+ min-width:0;width:100%;font-size:10px!important;padding:10px 0!important;color:#223c2c!important}
+.at-modern-toolbar select,.at-modern-delivery-picker select{border:1px solid #dce9df;border-radius:9px;
+ padding:10px;background:#fff;color:#2b4735;font-size:11px;max-width:100%}
+.at-modern-toolbar>button{display:grid;place-items:center;color:#32583c;border:1px solid #dee8e1;
+ border-radius:8px;padding:10px;background:#fff}
+.at-modern-toolbar>button[aria-pressed=true]{background:#daf3e3;color:#00834e;border-color:#8bcda7}
+.at-modern-card-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+.at-modern-truck-card{display:flex;flex-direction:column;text-align:left;color:#294236;min-width:0;
+ padding:0;border:1px solid #e4ebe6;background:#fff;border-radius:14px;overflow:hidden;
+ box-shadow:0 5px 13px #253d2a0a;transition:transform .18s,border-color .18s}
+.at-modern-truck-card:hover{transform:translateY(-2px);border-color:#70c597}
+.at-modern-card-image{position:relative;height:184px;background:linear-gradient(135deg,#fafcfb,#eef2f0);
+ display:flex;flex-direction:column;justify-content:end;padding:12px;overflow:hidden}
+.at-modern-truck-art{position:absolute;right:-7px;bottom:1px;transform:scaleX(1.35);
+ color:#aebbb6;filter:drop-shadow(0 15px 7px #617b6225)}
+.at-modern-tag{display:inline-flex;align-items:center;gap:6px;padding:7px 9px;border-radius:18px;
+ background:#f5f5f3;color:#5b6b62;border:1px solid #e4e9e3;font-size:10px;
+ font-weight:820;text-transform:capitalize}
+.at-modern-tag i{display:block;border-radius:50%;width:6px;height:6px;background:currentColor}
+.at-modern-tag.ready,.at-modern-tag.delivered{background:#eaf9ee;color:#028d56}
+.at-modern-tag.ongoing{background:#fff5e6;color:#b47a17}
+.at-modern-card-image>.at-modern-tag{position:absolute;top:12px;left:12px;z-index:2}
+.at-modern-card-unit{position:relative;z-index:2;display:grid;gap:6px;max-width:60%}
+.at-modern-card-unit strong{font-size:18px;font-weight:800;color:#21372d}
+.at-modern-card-unit small{font-size:11px;color:#6d8075;line-height:1.45}
+.at-modern-card-copy{padding:13px;border:1px solid #edf1ee;border-radius:12px;
+ margin:0 6px 6px;background:#fff;display:grid;gap:12px}
+.at-modern-card-copy>div:first-child{display:flex;gap:12px;justify-content:space-between;flex-wrap:wrap}
+.at-modern-card-copy>div:first-child span{font-size:11px;font-weight:750;color:#263f30}
+.at-modern-card-copy>div:first-child small{color:#7d8b81;font-size:10px}
+.at-modern-load-progress{display:grid;gap:8px}
+.at-modern-load-progress>div:first-child{display:flex;justify-content:space-between;color:#6c8172;
+ font-size:10px;gap:10px}
+.at-modern-progress-bar{height:7px;overflow:hidden;background:repeating-linear-gradient(110deg,#e8eeeb 0 4px,#fff 4px 7px);
+ border-radius:9px}
+.at-modern-progress-bar>span{display:block;background:#21aa68;height:100%;border-radius:9px}
+.at-modern-card-grid.list{grid-template-columns:1fr}
+.at-modern-card-grid.list .at-modern-truck-card{flex-direction:row}
+.at-modern-card-grid.list .at-modern-card-image{width:42%;min-height:155px}
+.at-modern-card-grid.list .at-modern-card-copy{flex:1;align-content:center;margin:8px}
+.at-modern-empty{display:grid;align-content:center;justify-items:center;gap:11px;padding:36px 18px;
+ text-align:center;color:#7a9a83;min-width:0}
+.at-modern-empty strong{font-size:12px;color:#284e37}
+.at-modern-empty p{font-size:10px;color:#819387;line-height:1.65;max-width:340px;margin:0}
+.at-modern-modal{position:fixed;z-index:2000;inset:0;background:#06190eb7;display:grid;place-items:center;
+ padding:20px;overflow:auto}
+.at-modern-modal-content{background:#f7fbf8;border:1px solid #b3dbc2;border-radius:17px;
+ width:min(760px,100%);max-height:90vh;overflow:auto;padding:18px;display:grid;gap:12px}
+.at-modern-modal-head{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.at-modern-modal-head span{font-size:9px;color:#098c5a;font-weight:800}
+.at-modern-modal-head h3{font-size:17px;color:#183c28;margin:6px 0}
+.at-modern-modal-head button{border:1px solid #d9e7de;border-radius:8px;background:#fff;color:#345c3b;padding:8px}
+.at-modern-equipment-context{display:flex;align-items:center;justify-content:space-between;gap:10px;
+ flex-wrap:wrap;color:#668374;font-size:11px}
+.at-modern-equipment-context strong{color:#1e4e31}
+.at-modern-delivery-hero{background:linear-gradient(120deg,#fff 35%,#ebf7f2);
+ padding:26px;border:1px solid #e1eae4;border-radius:15px;min-height:230px}
+.at-modern-delivery-hero-copy{max-width:500px}
+.at-modern-delivery-hero h2{font-size:30px;line-height:1.2;margin:10px 0}
+.at-modern-delivery-hero p{font-size:12px;margin:10px 0 19px}
+.at-modern-hero-vehicle{color:#9bbfb3;display:grid;justify-items:center;min-width:210px}
+.at-modern-hero-vehicle small{font-size:9px;color:#859d91}
+.at-modern-delivery-body{display:grid;grid-template-columns:minmax(210px,.9fr) minmax(0,1.7fr);gap:14px}
+.at-modern-delivery-metrics{display:grid;gap:12px}
+.at-modern-delivery-metrics .at-modern-kpi{border:1px solid #e9efeb;border-radius:11px;padding:14px}
+.at-modern-delivery-chart{display:grid;align-content:start}
+.at-modern-daily-bars{display:flex;gap:10px;align-items:end;justify-content:space-around;height:220px;
+ padding:15px 5px 4px;border-bottom:1px solid #c7dace}
+.at-modern-daily-bars>div{display:flex;align-items:center;flex-direction:column;
+ justify-content:flex-end;gap:6px;flex:1;height:100%}
+.at-modern-daily-bars>div>span{min-height:3px;width:min(48px,100%);border-radius:7px 7px 0 0;
+ background:linear-gradient(#63d5a0,#a9ebc8)}
+.at-modern-daily-bars>div strong{color:#209863;font-size:10px;height:13px}
+.at-modern-daily-bars>div small{color:#889a8e;font-size:9px;white-space:nowrap}
+.at-modern-orders{grid-column:1/-1}
+.at-modern-orders-scroll{overflow-x:auto}
+.at-modern-orders table{width:100%;border-collapse:collapse;text-align:left;min-width:550px}
+.at-modern-orders th{color:#889b90;font-size:9px;text-transform:uppercase;font-weight:850;letter-spacing:.5px;
+ background:#f6faf7;padding:12px}
+.at-modern-orders td{padding:12px;color:#536f5b;font-size:11px;border-bottom:1px solid #e4ede6}
+.at-modern-orders td strong{color:#23492e}
+.at-modern-orders td button{background:#e3f8e9;border:0;color:#118d58;border-radius:8px;padding:8px}
+.at-modern-orders .at-modern-search{max-width:240px}
+.at-modern-delivery-vehicle{grid-column:1/-1}
+.at-modern-link{display:inline-flex;align-items:center;gap:7px;background:transparent;border:0;color:#078c55;font-size:11px}
+.at-modern-delivery-picker{display:grid;gap:8px;font-size:10px;color:#698270;max-width:400px;margin-bottom:13px}
+.at-modern-footnote{display:flex;gap:7px;align-items:flex-start;font-size:10px;
+ color:#71877b;line-height:1.65;margin:11px 0 0}
+.at-modern-profile-grid{display:grid;grid-template-columns:minmax(200px,.85fr) minmax(0,1.6fr);gap:12px}
+.at-modern-profile-list{display:grid;align-content:start;gap:5px;max-height:640px;overflow-y:auto;min-width:0}
+.at-modern-profile-list>.at-modern-search{margin-bottom:9px}
+.at-modern-profile-row{display:flex;align-items:center;gap:11px;text-align:left;background:#fff;
+ border:1px solid #e5ede6;border-radius:10px;color:#254634;padding:11px;min-width:0}
+.at-modern-profile-row.selected{border-color:#61ba87;background:#effcf3}
+.at-modern-profile-avatar{width:39px;height:39px;display:grid;place-items:center;flex-shrink:0;
+ border-radius:50%;background:#d1efda;color:#137d50}
+.at-modern-profile-row>span:nth-child(2){flex:1;min-width:0;display:grid;gap:5px}
+.at-modern-profile-row strong{font-size:11px;overflow-wrap:anywhere}
+.at-modern-profile-row small{font-size:10px;color:#708d7a;line-height:1.5}
+.at-modern-profile-work{white-space:nowrap;font-size:9px;color:#1b8d59}
+.at-modern-profile-row>svg{color:#27945e}
+.at-modern-profile-detail{min-width:0}
+.at-modern-profile-detail-head{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.at-modern-profile-detail-head>div{flex:1;display:grid;gap:4px}
+.at-modern-profile-detail-head strong{font-size:13px}
+.at-modern-profile-detail-head small{color:#819488;font-size:10px}
+@media(max-width:1120px){.at-modern-card-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .at-modern-kpis{grid-template-columns:repeat(2,minmax(0,1fr));row-gap:12px}}
+@media(max-width:760px){.at-modern{padding:10px}
+ .at-modern-card-grid{grid-template-columns:1fr}
+ .at-modern-kpis,.at-modern-profile-grid,.at-modern-delivery-body{grid-template-columns:1fr}
+ .at-modern-delivery-hero{padding:15px}
+ .at-modern-hero-vehicle{min-width:0}
+ .at-modern-orders,.at-modern-delivery-vehicle{grid-column:1}
+ .at-modern-profile-row{gap:6px}
+ .at-modern-card-grid.list .at-modern-truck-card{flex-direction:column}
+ .at-modern-card-grid.list .at-modern-card-image{width:100%}}
+@media(max-width:480px){.at-modern-section-title{display:grid}
+ .at-modern-header-actions{width:100%}.at-modern-kpi strong{font-size:22px}
+ .at-modern-delivery-hero h2{font-size:22px}
+ .at-modern-toolbar label{min-width:100%}}
+@media(prefers-reduced-motion:reduce){.at-modern *{animation:none!important;transition:none!important}}

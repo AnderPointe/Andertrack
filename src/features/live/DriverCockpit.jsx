@@ -9,6 +9,8 @@ import DeliveryWorkflow from './DeliveryWorkflow.jsx';
 import FleetMap from './FleetMap.jsx';
 import HolographicHud from './HolographicHud.jsx';
 import ArcviewCinema from './ArcviewCinema.jsx';
+import Vehicle3D from './Vehicle3D.jsx';
+import {assignedVehicleForDriver} from '../../lib/vehicle-3d.js';
 import { cockpitCinemaAccess } from '../../lib/arcview-cinema.js';
 import { validGpsPosition, freshGpsPosition } from '../../lib/operations.js';
 import {
@@ -101,6 +103,12 @@ export default function DriverCockpit({
     reference:person.reference,division:person.division,customer_name:person.customer,
     dropoff_address:person.address,status:'in_transit',driver_user_id:person.id,id:person.id,
   }:shipment;
+  const driverEquipment=isDemo?{
+    id:'sample-equipment:'+person.id,unit_number:person.unit,
+    vehicle_type:person.role==='Local'?'cargo_van':'tractor',
+  }:isDriver?assignedVehicleForDriver({
+    assignments:liveAssignments,vehicles,driverUserId:currentUserId
+  }):null;
   const destinationUrl=cockpitRouteUrl(detail);
   const demoEarnings=moneyTotal(person.earnings)+(simulateDrop?15:0);
   const itemizedEarnings=isDemo?{...person.earnings,stops:person.earnings.stops+(simulateDrop?15:0)}:null;
@@ -157,6 +165,11 @@ export default function DriverCockpit({
       <span className="at-cockpit-current-duty">{isDemo?DUTY_STATES.find(s=>s.id===dutyStatus)?.label.toUpperCase():
         'ELD NOT CONNECTED'}</span>
     </div>
+
+    {(isDemo||isDriver)&&<Vehicle3D key={'driver-equipment:'+(
+      driverEquipment?.id||'unassigned')} vehicle={driverEquipment}
+      isDemo={isDemo} title={driverEquipment?'My assigned vehicle · 3D':'Equipment showroom · unassigned'}
+      allowSelection={true}/>}
 
     <HolographicHud key={isDemo ? 'sample-hud:'+person.id : 'driver-hud:'+currentUserId}
       isDemo={isDemo} person={isDemo?person:null} dutyStatus={isDemo?dutyStatus:null}

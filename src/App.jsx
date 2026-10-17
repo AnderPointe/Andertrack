@@ -20,11 +20,11 @@ const demoDrivers = [
   {id:'p5',user_id:'d5',display_name:'Morgan Brooks',license_class:'C',license_verified:true,availability:'available'},
 ];
 const demoVehicles=[
-  {id:'v1',unit_number:'TX-2048',vehicle_type:'tractor',required_license_class:'A',enabled:true},
-  {id:'v2',unit_number:'VAN-071',vehicle_type:'cargo_van',required_license_class:'C',enabled:true},
-  {id:'v3',unit_number:'BOX-116',vehicle_type:'box_truck',required_license_class:'B',enabled:true},
-  {id:'v4',unit_number:'HOT-042',vehicle_type:'hotshot',required_license_class:'A',enabled:false},
-  {id:'v5',unit_number:'VAN-095',vehicle_type:'cargo_van',required_license_class:'C',payload_capacity_lbs:2300,enabled:true},
+  {id:'v1',unit_number:'TX-2048',make:'Volvo',model:'VNL 760',model_year:2025,vehicle_type:'tractor',required_license_class:'A',enabled:true},
+  {id:'v2',unit_number:'VAN-071',make:'Ford',model:'Transit 350',model_year:2024,vehicle_type:'cargo_van',required_license_class:'C',enabled:true},
+  {id:'v3',unit_number:'BOX-116',make:'Freightliner',model:'M2 106',model_year:2023,vehicle_type:'box_truck',required_license_class:'B',enabled:true},
+  {id:'v4',unit_number:'HOT-042',make:'Ram',model:'3500',model_year:2025,vehicle_type:'hotshot',required_license_class:'A',enabled:false},
+  {id:'v5',unit_number:'VAN-095',make:'Mercedes-Benz',model:'Sprinter 2500',model_year:2024,vehicle_type:'cargo_van',required_license_class:'C',payload_capacity_lbs:2300,enabled:true},
 ];
 const demoLocations=[
   {id:'loc1',driver_id:'d1',vehicle_id:'v1',latitude:32.748,longitude:-97.337,status:'in_transit',unit_number:'TX-2048',last_ping_at:new Date(now-90000).toISOString()},

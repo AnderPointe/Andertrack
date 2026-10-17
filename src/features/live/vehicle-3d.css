@@ -1,0 +1,68 @@
+/* 3D equipment studio — works in light and dark shells */
+.at-v3d{--v3d-green:#008757;--v3d-ink:#213733;--v3d-muted:#758882;display:grid;
+ gap:12px;min-width:0;padding:16px;border:1px solid #d8e5df;background:
+ linear-gradient(130deg,#f5faf7,#fff 60%);border-radius:15px;color:var(--v3d-ink);box-shadow:0 5px 24px #1c35210a}
+.at-v3d-heading{display:flex;gap:10px;justify-content:space-between;align-items:center;flex-wrap:wrap}
+.at-v3d-heading>div>span{color:var(--v3d-green);font-size:9px;letter-spacing:1px;font-weight:850}
+.at-v3d-heading h3{display:flex;align-items:center;gap:8px;color:#203630;margin:6px 0 0;font-size:17px;letter-spacing:-.3px}
+.at-v3d-heading h3 svg{color:#09885f}
+.at-v3d-chip{white-space:nowrap;font-size:9px;letter-spacing:.6px;color:#20855f;background:#e6f7ed;
+ border:1px solid #c2e5d0;border-radius:18px;padding:7px 9px;font-weight:850}
+.at-v3d-stage{height:310px;min-width:0;position:relative;overflow:hidden;
+ border:1px solid #d9e7e0;background:radial-gradient(ellipse at 50% 72%,#d3e5dd 0,transparent 44%),
+ linear-gradient(180deg,#f8fcfa 0%,#edf5f1 100%);border-radius:12px}
+.at-v3d-stage::before{content:'';position:absolute;inset:0;pointer-events:none;
+ background:repeating-linear-gradient(0deg,transparent 0 35px,#99b5a417 36px),
+ repeating-linear-gradient(90deg,transparent 0 35px,#99b5a417 36px);
+ mask-image:linear-gradient(transparent,#000)}
+.at-v3d-canvas{height:100%;width:100%;touch-action:pan-y;position:relative;z-index:2;cursor:grab}
+.at-v3d-canvas:active{cursor:grabbing}
+.at-v3d-canvas canvas{display:block!important;max-width:100%}
+.at-v3d-stage-label{position:absolute;z-index:3;top:12px;left:13px;display:grid;gap:4px;pointer-events:none}
+.at-v3d-stage-label strong{font-size:12px;color:#204d3d}
+.at-v3d-stage-label span{font-size:10px;color:#6b8e80}
+.at-v3d-camera{position:absolute;z-index:4;bottom:12px;right:12px;display:flex;gap:5px;flex-wrap:wrap;
+ justify-content:flex-end}
+.at-v3d-camera button{font:inherit;cursor:pointer;font-size:10px;font-weight:750;display:flex;align-items:center;gap:5px;
+ color:#275b47;padding:7px 9px;border-radius:7px;border:1px solid #c3ded0;background:#fffffff0}
+.at-v3d-camera button:hover{border-color:#0ba16b}
+.at-v3d-fallback{height:100%;display:grid;justify-items:center;align-content:center;gap:12px;color:#56836c;
+ text-align:center;font-size:11px}
+.at-v3d-identity{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.at-v3d-identity>div{min-width:0;display:grid;gap:5px;border:1px solid #dde9e1;border-radius:10px;
+ padding:11px;background:#fff}
+.at-v3d-identity span{font-size:9px;color:#758a80}
+.at-v3d-identity strong{font-size:12px;color:#173d31;overflow-wrap:anywhere}
+.at-v3d-bottom{display:grid;grid-template-columns:minmax(125px,1.15fr) minmax(115px,1fr) minmax(80px,.65fr);gap:10px;align-items:end}
+.at-v3d-bottom>label{display:grid;gap:8px;color:#627d6e;font-size:10px;font-weight:740;min-width:0}
+.at-v3d-bottom select{background:#fff;border:1px solid #cee3d7;border-radius:8px;min-width:0;
+ padding:9px;color:#264d3a;font:inherit;font-size:11px}
+.at-v3d-bottom input[type=range]{width:100%;accent-color:#079761}
+.at-v3d-swatches{display:flex;gap:5px;align-items:center;flex-wrap:wrap}
+.at-v3d-swatches button{width:27px;height:27px;border-radius:50%;border:2px solid #c4d9cd;
+ display:grid;place-items:center;color:#112921;padding:0;cursor:pointer}
+.at-v3d-swatches button.picked{border-color:#218d61;box-shadow:0 0 0 2px #b7e7cd}
+.at-v3d-disclaimer{color:#6e8579;font-size:10px;line-height:1.7;margin:0}
+.at-v3d.compact{padding:10px;gap:8px}
+.at-v3d.compact .at-v3d-heading h3{font-size:13px}
+.at-v3d.compact .at-v3d-stage{height:225px}
+.at-v3d.compact .at-v3d-bottom{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
+.at-v3d.compact .at-v3d-bottom>label:last-child{display:none}
+.at-v3d.compact .at-v3d-identity{gap:6px}
+.at-v3d.compact .at-v3d-identity strong{font-size:10px}
+.at-v3d.compact .at-v3d-disclaimer{font-size:9px}
+@keyframes at-v3d-rotate{to{transform:rotate(-360deg)}}
+.at-v3d-spinning{animation:at-v3d-rotate 2.4s linear infinite}
+@media(max-width:660px){.at-v3d-bottom{grid-template-columns:1fr 1fr}
+ .at-v3d-stage{height:255px}
+ .at-v3d-camera button{padding:6px;font-size:9px}}
+@media(max-width:410px){.at-v3d-bottom{grid-template-columns:1fr}.at-v3d-identity{grid-template-columns:1fr}
+ .at-v3d-stage-label span{max-width:175px}
+ .at-v3d-camera{left:7px;right:7px}}
+@media(prefers-reduced-motion:reduce){.at-v3d *{animation:none!important;transition:none!important}}
+
+/* Model concept selector: four real controls fit as two clean light-theme rows. */
+.at-v3d-bottom{grid-template-columns:repeat(2,minmax(0,1fr))}
+.at-v3d-bottom>label:last-child{align-self:center}
+.at-v3d-camera button:disabled{opacity:.43;cursor:not-allowed}
+@media(max-width:460px){.at-v3d-bottom{grid-template-columns:1fr}}
