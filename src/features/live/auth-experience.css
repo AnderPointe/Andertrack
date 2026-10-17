@@ -58,3 +58,6 @@
 @media(max-width:960px){.at-auth-layout{grid-template-columns:1fr}.at-auth-form-wrap{max-width:600px;justify-self:stretch}.at-auth-intro h1{font-size:clamp(39px,6vw,60px)}.at-auth-layout{padding-top:20px}}
 @media(max-width:560px){.at-auth-nav-caption{display:none}.at-auth-layout{padding-bottom:35px}.at-auth-graphic{height:230px}.at-auth-float-one{left:12px;top:16px}.at-auth-float-two{bottom:12px;right:12px}.at-auth-float-three{display:none}.at-auth-intro h1{letter-spacing:-1.6px}.at-auth-footer{flex-direction:column}.at-auth-feature-row{gap:10px}.at-auth-form-wrap{padding:25px 19px}}
 @media(prefers-reduced-motion:reduce){.at-auth-screen *{animation:none!important;transition:none!important}}
+
+.at-auth-change-email{border:0;background:transparent;color:#fbbf73;text-align:left;font-weight:750;font-size:11px;padding:8px 0 0;cursor:pointer}
+.at-auth-change-email:hover{text-decoration:underline}

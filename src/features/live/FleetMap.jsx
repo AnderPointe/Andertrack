@@ -1,6 +1,7 @@
 import React, { useEffect, useRef } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
+import { validGpsPosition, freshGpsPosition } from '../../lib/operations.js';
 
 /**
  * Public OpenStreetMap tiles are for pilot-scale visualization, not a commercial
@@ -11,10 +12,10 @@ export default function FleetMap({ locations = [], theme = 'dark', onChoose, cla
   const host = useRef(null);
   const map = useRef(null);
   const markers = useRef(null);
-  const valid = locations.filter(item => item.latitude != null && item.longitude != null && Number.isFinite(Number(item.latitude)) &&
-    Number.isFinite(Number(item.longitude)) &&
-    Number(item.latitude) >= -90 && Number(item.latitude) <= 90 &&
-    Number(item.longitude) >= -180 && Number(item.longitude) <= 180);
+  const hasFitInitialLocations = useRef(false);
+  const onChooseRef = useRef(onChoose);
+  onChooseRef.current = onChoose;
+  const valid = locations.filter(validGpsPosition);
 
   useEffect(() => {
     if (!host.current || map.current) return undefined;
@@ -47,8 +48,7 @@ export default function FleetMap({ locations = [], theme = 'dark', onChoose, cla
     valid.forEach(location => {
       const lat = Number(location.latitude);
       const lng = Number(location.longitude);
-      const lastPing = location.last_ping_at ? Date.parse(location.last_ping_at) : NaN;
-      const online = Number.isFinite(lastPing) && Date.now() - lastPing < 300000;
+      const online = freshGpsPosition(location);
       const icon = L.divIcon({
         className: 'at-map-pin-wrap',
         html: '<span class="at-map-pin ' + (online ? 'at-map-pin-live' : 'at-map-pin-idle') + '"><span class="at-pin-core"></span></span>',
@@ -63,13 +63,17 @@ export default function FleetMap({ locations = [], theme = 'dark', onChoose, cla
         ' · ' + (online ? 'Recently reported' : 'Last update unavailable or stale');
       popup.append(heading, desc);
       marker.bindPopup(popup);
-      marker.on('click', () => onChoose?.(location));
+      marker.on('click', () => onChooseRef.current?.(location));
       marker.addTo(layer);
       bounds.push([lat, lng]);
     });
-    if (bounds.length > 1) instance.fitBounds(bounds, { padding: [58, 58], maxZoom: 11 });
-    else if (bounds.length === 1) instance.setView(bounds[0], 10);
-  }, [locations, onChoose]);
+    // Keep the user's pan/zoom while live GPS rows refresh; re-center on first valid feed only.
+    if (!hasFitInitialLocations.current && bounds.length) {
+      if (bounds.length > 1) instance.fitBounds(bounds, { padding: [58, 58], maxZoom: 11 });
+      else instance.setView(bounds[0], 10);
+      hasFitInitialLocations.current = true;
+    }
+  }, [locations]);
 
   return <div className={'at-fleet-map ' + className + ' at-map-' + theme}>
     <div ref={host} className="at-fleet-map-canvas" role="application" aria-label="Interactive fleet map" />

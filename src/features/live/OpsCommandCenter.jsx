@@ -6,6 +6,7 @@ import {
   ShieldCheck, Sun, Truck, Users, Wifi, X, Zap,
 } from 'lucide-react';
 import FleetMap from './FleetMap.jsx';
+import { ACTIVE_STATUSES, freshGpsPosition, visibleShipments, selectedVisibleShipment } from '../../lib/operations.js';
 import './command-center.css';
 import DispatchRequestQueue from './DispatchRequestQueue.jsx';
 import AssignmentActions from './AssignmentActions.jsx';
@@ -18,7 +19,7 @@ const NAV = [
   { id: 'analytics', label: 'Analytics', icon: BarChart3 },
   { id: 'settings', label: 'Workspace settings', icon: Settings2 },
 ];
-const ACTIVE_STATES = new Set(['offered', 'assigned', 'accepted', 'at_pickup', 'picked_up', 'in_transit']);
+const ACTIVE_STATES = ACTIVE_STATUSES;
 const human = value => String(value || 'Unknown').replaceAll('_', ' ').replace(/\b\w/g, c => c.toUpperCase());
 const stamp = value => {
   if (!value) return '—';
@@ -47,14 +48,7 @@ function MetricCard({ icon: Icon, label, value, detail, accent = 'orange' }) {
   </article>;
 }
 function ShipmentPanel({ assignments, selected, onSelect, filter, setFilter, query, embedded = false }) {
-  const items = useMemo(() => (assignments || []).filter(a => {
-    const matches = filter === 'all' || (filter === 'active' && ACTIVE_STATES.has(a.status))
-      || (filter === 'pending' && ['unassigned', 'offered'].includes(a.status))
-      || a.status === filter;
-    const text = [a.reference, a.customer_name, a.pickup_address, a.dropoff_address, a.commodity, a.division]
-      .join(' ').toLowerCase();
-    return matches && text.includes(query.trim().toLowerCase());
-  }), [assignments, filter, query]);
+  const items = useMemo(() => visibleShipments(assignments,filter,query),[assignments,filter,query]);
   return <section className={'at-surface at-shipments ' + (embedded ? 'at-embedded' : '')}>
     <CardHeading eyebrow="SHIPMENT INTELLIGENCE" title="Active order pipeline" action={<span className="at-count">{items.length} visible</span>}/>
     <div className="at-filter-row" role="group" aria-label="Filter shipments">
@@ -143,11 +137,11 @@ function ActivityBars({ assignments }) {
     <div className="at-chart-footer"><Activity size={15}/> Actual shipment creation timestamps · No estimates</div>
   </section>;
 }
-function TrackingPanel({ locations, theme, drivers, isDemo, onChoose }) {
-  const fresh = locations.filter(l => Date.now() - Date.parse(l.last_ping_at) < 300000);
+function TrackingPanel({ locations, theme, drivers, isDemo, onChoose, scopeKey }) {
+  const fresh = locations.filter(l => freshGpsPosition(l));
   return <section className="at-surface at-tracking-panel">
     <CardHeading eyebrow="GEOSPATIAL COMMAND" title="Live fleet tracking" action={<span className="at-live-chip"><Radio size={14}/>{fresh.length} reporting</span>}/>
-    <div className="at-map-frame"><FleetMap locations={locations} theme={theme} onChoose={onChoose}/>
+    <div className="at-map-frame"><FleetMap key={scopeKey} locations={locations} theme={theme} onChoose={onChoose}/>
       <div className="at-map-top-left"><span className="at-map-overlay-label"><span/> {isDemo ? 'ILLUSTRATIVE DEMO POSITIONS' : 'AUTHORIZED GPS POSITIONS'}</span></div>
       <div className="at-map-bottom-left"><div><strong>{locations.length}</strong><small>Location records</small></div>
         <div><strong>{fresh.length}</strong><small>Reporting in 5 min</small></div></div>
@@ -176,7 +170,7 @@ function FleetPanel({ drivers, vehicles, locations }) {
 }
 
 export default function OpsCommandCenter({
-  isDemo=false, session, memberships=[], organizationId, setOrganizationId=()=>{}, role='',
+  isDemo=false, session, memberships=[], membershipLoaded=true, organizationId, setOrganizationId=()=>{}, role='',
   profile, assignments=[], dispatchRequests=[], drivers=[], vehicles=[], locations=[], error='',
   loading=false, sync='Not connected', reload=()=>{}, onDemo=()=>{}, onSignOut=()=>{},
 }) {
@@ -189,7 +183,8 @@ export default function OpsCommandCenter({
   const [mobileMenu,setMobileMenu]=useState(false);
   const [focusedPin,setFocusedPin]=useState(null);
   const ordered = useMemo(()=>[...assignments].sort((a,b)=>Date.parse(b.created_at)-Date.parse(a.created_at)),[assignments]);
-  const selected=ordered.find(a=>a.id===selectedId)||ordered[0];
+  const visible = useMemo(() => visibleShipments(ordered,filter,query),[ordered,filter,query]);
+  const selected=selectedVisibleShipment(visible,selectedId);
   const currentDriver=drivers.find(d=>d.user_id===selected?.driver_user_id);
   const userId=session?.user?.id||'';
   const planner=role==='admin'||role==='dispatcher';
@@ -199,14 +194,14 @@ export default function OpsCommandCenter({
   const enRoute=ordered.filter(a=>a.status==='in_transit').length;
   const delivered=ordered.filter(a=>a.status==='delivered').length;
   const available=drivers.filter(d=>d.availability==='available').length;
-  const fresh=locations.filter(l=>Date.now()-Date.parse(l.last_ping_at)<300000).length;
+  const fresh=locations.filter(l=>freshGpsPosition(l)).length;
   const metrics=[
     {label:'Total shipments',value:total,detail:'Visible to your organization',icon:Package,accent:'orange'},
     {label:'Active deliveries',value:active,detail:enRoute+' currently in transit',icon:Route,accent:'teal'},
     {label:'Drivers available',value:available,detail:drivers.length+' drivers on roster',icon:Users,accent:'orange'},
     {label:'Pending requests',value:dispatchRequests.length,detail:delivered+' loads delivered',icon:Clock3,accent:'teal'},
   ];
-  const noMembership=!isDemo && memberships.length===0;
+  const noMembership=!isDemo && membershipLoaded && memberships.length===0;
   const noDriver=!isDemo && !planner && !profile;
   return <div className="at-workspace" data-theme={theme}>
     <aside className={'at-sidebar '+(mobileMenu?'at-sidebar-open':'')}>
@@ -263,7 +258,7 @@ export default function OpsCommandCenter({
           </div>
         </section>
         {error&&<div className="at-alert" role="alert"><ShieldCheck size={17}/>{error}</div>}
-        {noMembership?<section className="at-surface at-access-needed"><LockKeyhole size={30}/><h2>Organization access pending</h2>
+        {!isDemo && !membershipLoaded ? <section className="at-surface at-access-needed" role="status"><RefreshCw size={26} className="at-spinning"/><h2>Checking workspace access</h2><p>Loading approved organizations and roles…</p></section> : noMembership?<section className="at-surface at-access-needed"><LockKeyhole size={30}/><h2>Organization access pending</h2>
           <p>A trusted administrator must assign your account to an organization. No customer or shipment data is exposed until access is approved.</p></section>:
         <>
           {!isDemo&&memberships.length>1&&<div className="at-org-select"><label htmlFor="at-org">Active organization</label><select id="at-org" value={organizationId} onChange={e=>setOrganizationId(e.target.value)}>{memberships.map(m=>
@@ -272,7 +267,7 @@ export default function OpsCommandCenter({
           {view==='overview'&&<>
             <div className="at-metrics-grid">{metrics.map(m=><MetricCard key={m.label} {...m}/>)}</div>
             <div className="at-hero-grid">
-              <TrackingPanel locations={locations} theme={theme} isDemo={isDemo} drivers={drivers} onChoose={onChoose}/>
+              <TrackingPanel locations={locations} theme={theme} isDemo={isDemo} drivers={drivers} onChoose={onChoose} scopeKey={organizationId}/>
               {isDemo?<section className="at-surface at-queue-placeholder">
                 <CardHeading eyebrow="DISPATCH WORKFLOW" title="Live Request Queue" action={<span className="at-count">3 sample requests</span>}/>
                 <div className="at-demo-request"><span>01</span><div><strong>Marcus Taylor</strong><small>CDL · Class A / Ready</small></div><i>FIRST</i></div>
@@ -297,7 +292,7 @@ export default function OpsCommandCenter({
               <MetricCard icon={Truck} label="Registered vehicles" value={vehicles.length} detail="Organization fleet" accent="orange"/>
               <MetricCard icon={Route} label="In transit" value={enRoute} detail="Assignment status" accent="teal"/>
             </div>
-            <TrackingPanel locations={locations} theme={theme} isDemo={isDemo} drivers={drivers} onChoose={onChoose}/>
+            <TrackingPanel locations={locations} theme={theme} isDemo={isDemo} drivers={drivers} onChoose={onChoose} scopeKey={organizationId}/>
             <div className="at-surface at-telemetry-list"><CardHeading eyebrow="LOCATION FEED" title="Fleet reporting" action={<span className="at-count">{locations.length} positions</span>}/>
               {locations.length?locations.map((l,index)=><button key={l.id||index} className="at-telemetry-row" onClick={()=>setFocusedPin(l)}>
                 <span className="at-telemetry-icon"><Truck size={17}/></span><div><strong>{l.unit_number||l.display_name||'Fleet unit'}</strong><small>{human(l.status)} · {l.latitude}, {l.longitude}</small></div>
