@@ -21,20 +21,23 @@ function clockTime(value) {
   return Number.isNaN(d.getTime())?'Not reported':d.toLocaleString();
 }
 
-function CinemaMap({location,snapshot,effects,recenter,mode}) {
+function CinemaMap({location,snapshot,effects,recenter,mode,interactive}) {
   const host=useRef(null);
   const map=useRef(null);
   const layer=useRef(null);
   const centered=useRef(false);
+  const lastRecenter=useRef(0);
   useEffect(()=>{
     if(mode!=='map'||!host.current)return undefined;
-    const instance=L.map(host.current,{zoomControl:false,scrollWheelZoom:false,preferCanvas:true})
+    const instance=L.map(host.current,{zoomControl:false,scrollWheelZoom:false,preferCanvas:true,
+      dragging:interactive, touchZoom:interactive, doubleClickZoom:interactive,
+      boxZoom:interactive,keyboard:interactive})
       .setView([38.6,-96.6],4);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
       maxZoom:18,minZoom:3,
       attribution:'&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noreferrer">OpenStreetMap</a> contributors',
     }).addTo(instance);
-    L.control.zoom({position:'bottomright'}).addTo(instance);
+    if(interactive)L.control.zoom({position:'bottomright'}).addTo(instance);
     const group=L.featureGroup().addTo(instance);
     map.current=instance;layer.current=group;
     const observer=typeof ResizeObserver!=='undefined'
@@ -46,7 +49,7 @@ function CinemaMap({location,snapshot,effects,recenter,mode}) {
       document.removeEventListener('fullscreenchange',onResize);
       observer?.disconnect();instance.remove();map.current=null;layer.current=null;centered.current=false;
     };
-  },[mode]);
+  },[mode,interactive]);
   useEffect(()=>{
     if(!map.current||!layer.current)return;
     layer.current.clearLayers();
@@ -66,8 +69,11 @@ function CinemaMap({location,snapshot,effects,recenter,mode}) {
     if(!centered.current){map.current.setView(coords,13);centered.current=true;}
   },[snapshot,location]);
   useEffect(()=>{
-    if(recenter&&map.current&&snapshot.gpsFresh&&snapshot.position){
-      map.current.setView([snapshot.position.latitude,snapshot.position.longitude],14,{animate:false});
+    if(recenter!==lastRecenter.current){
+      lastRecenter.current=recenter;
+      if(map.current&&snapshot.gpsFresh&&snapshot.position){
+        map.current.setView([snapshot.position.latitude,snapshot.position.longitude],14,{animate:false});
+      }
     }
   },[recenter,snapshot]);
   if(mode!=='map')return null;
@@ -139,6 +145,7 @@ export default function ArcviewCinema({
 }) {
   const rootRef=useRef(null);
   const speechRef=useRef(null);
+  const wasFullscreen=useRef(false);
   const inputRef=useRef(null);
   const [open,setOpen]=useState(false);
   const [nativeFullscreen,setNativeFullscreen]=useState(false);
@@ -214,7 +221,13 @@ export default function ArcviewCinema({
   },[open,safety.allowVoice,visible,stopSpeech]);
   useEffect(()=>{
     if(!open)return undefined;
-    const onFull=()=>setNativeFullscreen(document.fullscreenElement===rootRef.current);
+    const onFull=()=>{
+      const active=document.fullscreenElement===rootRef.current;
+      setNativeFullscreen(active);
+      if(wasFullscreen.current&&!active){stopSpeech();setOpen(false);}
+      wasFullscreen.current=active;
+    };
+    onFull();
     const onKey=event=>{
       if(event.key==='Escape'&&!document.fullscreenElement)close();
     };
@@ -226,10 +239,11 @@ export default function ArcviewCinema({
       document.removeEventListener('fullscreenchange',onFull);
       document.removeEventListener('keydown',onKey);
     };
-  },[open,close]);
+  },[open,close,stopSpeech]);
   useEffect(()=>()=>{try{speechRef.current?.abort();}catch{/* unmount */}},[]);
   const launch=()=>{
     if(locked)return;
+    wasFullscreen.current=false;
     setTab('map');setOpen(true);setNotice('Cinematic mode ready. Display controls only.');
     const target=rootRef.current;
     if(target?.requestFullscreen){
@@ -318,7 +332,8 @@ export default function ArcviewCinema({
             <span><Crosshair size={15}/> {tab==='map'?'GEOSPATIAL FIELD':
               tab==='diagnostics'?'DIAGNOSTIC LAYERS':'MISSION DATA LINK'}</span>
             <span>OSM BASEMAP / NO AUTOMATED ROAD ROUTING</span></div>
-          <CinemaMap location={location} snapshot={snapshot} effects={effects} recenter={recenter} mode={tab}/>
+          <CinemaMap location={location} snapshot={snapshot} effects={effects} recenter={recenter}
+            mode={tab} interactive={safety.stationaryConfirmed}/>
           {tab==='diagnostics'&&<DiagnosticPanel location={location} snapshot={snapshot} isDemo={isDemo}/>}
           {tab==='mission'&&<MissionPanel assignment={assignment} isDemo={isDemo}/>}
         </main>
