@@ -296,3 +296,11 @@
 @media(prefers-reduced-motion:reduce){
  .at-workspace *{animation:none!important;transition:none!important;scroll-behavior:auto!important}
 }
+
+/* Final interaction polish */
+.at-workspace,.at-topbar,.at-surface,.at-metric,.at-settings-grid,.at-sidebar,.at-fleet-layout{
+  transition:background-color .25s ease,color .25s ease,border-color .25s ease;
+}
+.at-alert-shortcut{position:relative}
+.at-notification-count{position:absolute;top:-5px;right:-5px;min-width:17px;height:17px;padding:1px 4px;border-radius:30px;
+  background:var(--at-orange);color:#12191b;font-size:9px;font-weight:850;display:grid;place-items:center}
