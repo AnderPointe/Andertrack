@@ -15,7 +15,7 @@ import {
 import './driver-cockpit.css';
 import {
   DutyScenarioLab, EarningsScenarioStudio, PayoutSandbox,
-  JurisdictionReconciliationLab, StopVerificationLab,
+  JurisdictionReconciliationLab, StopVerificationLab, LiveDriverMission,
 } from './DriverCockpitPro.jsx';
 
 const fmtCash=value=>new Intl.NumberFormat('en-US',{style:'currency',currency:'USD'}).format(value||0);
@@ -138,6 +138,9 @@ export default function DriverCockpit({
       <span className="at-cockpit-current-duty">{isDemo?DUTY_STATES.find(s=>s.id===dutyStatus)?.label.toUpperCase():
         'ELD NOT CONNECTED'}</span>
     </div>
+
+    {!isDemo&&isDriver&&<LiveDriverMission assignments={liveAssignments}
+      activeAssignment={shipment} profile={profile}/>}
 
     <div className="at-cockpit-two-col">
       <section className="at-surface at-cockpit-panel">
