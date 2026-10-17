@@ -2,7 +2,7 @@ import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {
   CINEMA_COMMANDS,normalizeCinemaCommand,parseCinemaCommand,
-  cinemaSafety,cinemaDiagnostics,
+  cinemaSafety,cinemaDiagnostics,cockpitCinemaAccess,
 } from '../src/lib/arcview-cinema.js';
 import {hudSnapshot} from '../src/lib/holographic-hud.js';
 
@@ -61,4 +61,17 @@ test('commands have bounded length and do not accept arbitrary strings',()=>{
  const huge='show map'.repeat(500);
  assert.ok(normalizeCinemaCommand(huge).length<=120);
  assert.equal(parseCinemaCommand(huge).id,null);
+});
+
+test('cockpit launch is accessible to admins only as an explicitly sample-only workspace',()=>{
+  assert.deepEqual(cockpitCinemaAccess({isDemo:true,role:'admin'}),
+    {visible:true,liveDriver:false,sampleOnly:true});
+  assert.deepEqual(cockpitCinemaAccess({isDemo:false,role:'dispatcher'}),
+    {visible:true,liveDriver:false,sampleOnly:true});
+  assert.deepEqual(cockpitCinemaAccess({isDemo:false,role:'admin'}),
+    {visible:true,liveDriver:false,sampleOnly:true});
+  assert.deepEqual(cockpitCinemaAccess({isDemo:false,role:'driver'}),
+    {visible:true,liveDriver:true,sampleOnly:false});
+  assert.deepEqual(cockpitCinemaAccess({isDemo:false,role:'unapproved'}),
+    {visible:false,liveDriver:false,sampleOnly:false});
 });
