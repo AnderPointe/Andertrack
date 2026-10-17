@@ -236,7 +236,7 @@ export default function OpsCommandCenter({
   };
   const exportShipments=items=>{
     const csv=shipmentCsv(items);
-    const blob=new Blob(['\\uFEFF',csv],{type:'text/csv;charset=utf-8'});
+    const blob=new Blob(['\uFEFF',csv],{type:'text/csv;charset=utf-8'});
     const url=URL.createObjectURL(blob);
     const element=document.createElement('a');
     element.href=url;element.download='andertrack-shipments-'+new Date().toISOString().slice(0,10)+'.csv';
@@ -371,7 +371,7 @@ export default function OpsCommandCenter({
               <div className="at-demo-note"><LockKeyhole size={15}/> Demo only — claim controls disabled.</div></section>:
               <DispatchRequestQueue organizationId={organizationId} role={role} currentUserId={userId} profile={profile}
                 requests={dispatchRequests} drivers={drivers} assignments={assignments} vehicles={vehicles} onChanged={reload}/>}
-              <ShipmentPanel assignments={ordered} selected={selected} onSelect={setSelectedId} filter={filter} setFilter={setFilter} query={query}/>
+              <ShipmentPanel assignments={ordered} selected={selected} onSelect={setSelectedId} filter={filter} setFilter={setFilter} query={query} onExport={exportShipments}/>
             </div>
             <ShipmentDetail active={selected} driver={currentDriver} role={role} organizationId={organizationId}
               currentUserId={userId} profile={profile} drivers={drivers} vehicles={vehicles} reload={reload} isDemo={isDemo}/>
