@@ -79,7 +79,9 @@ export default function FleetReplayMap({
       const marker=L.circleMarker([unit.latitude,unit.longitude],{
         radius:9,color:'#fff',weight:2,fillColor:'#ff981b',fillOpacity:.94,
       }).addTo(group);
-      marker.bindTooltip(unit.unit_number||'Current reported location');
+      const tooltip=document.createElement('span');
+      tooltip.textContent=unit.unit_number||'Current reported location';
+      marker.bindTooltip(tooltip);
       bounds.push([Number(unit.latitude),Number(unit.longitude)]);
     }
     if(fence&&validGpsPosition(fence)&&Number(fence.radiusMiles)>0){
