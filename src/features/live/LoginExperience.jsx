@@ -1,6 +1,7 @@
 import React from 'react';
 import { ArrowRight, ArrowUpRight, CheckCircle2, Clock3, Fingerprint, LockKeyhole, MapPinned, Radio, Route, ShieldCheck, Truck, Wifi } from 'lucide-react';
 import './command-center.css';
+import './auth-experience.css';
 
 /** Authentication UI only; all session operations stay in LiveWorkspace. */
 export default function LoginExperience({ email, setEmail, sent, busy, error, onSubmit, onDemo }) {
