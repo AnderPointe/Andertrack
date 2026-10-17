@@ -74,18 +74,18 @@ export function selectedDispatchAssignment(assignments=[],requestedId='') {
   return assignments.find(a=>a.id===requestedId)||
     assignments.find(a=>ACTIVE_STATUSES.has(a.status))||assignments[0]||null;
 }
-export function dispatchModeLocation(assignment,locations=[]) {
+export function dispatchModeLocation(assignment,locations=[],now=Date.now()) {
   if(!assignment?.driver_user_id)return null;
   const matches=locations.filter(l=>l.driver_id===assignment.driver_user_id);
-  const recent=matches.filter(l=>freshGpsPosition(l)).sort((a,b)=>
+  const recent=matches.filter(l=>freshGpsPosition(l,now)).sort((a,b)=>
     Date.parse(b.last_ping_at||'')-Date.parse(a.last_ping_at||''))[0];
   return recent||null;
 }
-export function dispatchModeSummary(assignment,drivers=[],vehicles=[],locations=[]) {
+export function dispatchModeSummary(assignment,drivers=[],vehicles=[],locations=[],now=Date.now()) {
   if(!assignment)return null;
   const driver=drivers.find(d=>d.user_id===assignment.driver_user_id)||null;
   const vehicle=vehicles.find(v=>v.id===assignment.vehicle_id)||null;
-  const gps=dispatchModeLocation(assignment,locations);
+  const gps=dispatchModeLocation(assignment,locations,now);
   return {assignment,driver,vehicle,gps,hasCurrentGps:!!gps,
     canRoute:!!String(assignment.pickup_address||'').trim()&&
       !!String(assignment.dropoff_address||'').trim()};
