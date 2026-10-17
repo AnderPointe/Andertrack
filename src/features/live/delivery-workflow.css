@@ -1,0 +1,55 @@
+/* Phase 4 delivery custody: integrated Command Center surfaces and role-aware controls */
+.at-delivery{border:1px solid var(--at-border);background:var(--at-elevated);border-radius:13px;margin-top:22px;
+ padding:18px;display:grid;gap:15px;min-width:0}
+.at-delivery-title{display:flex;align-items:center;justify-content:space-between;gap:15px;flex-wrap:wrap}
+.at-delivery-heading{display:flex;align-items:center;gap:12px;min-width:0}
+.at-delivery-heading h3{margin:3px 0 0;font-size:16px;font-weight:800;letter-spacing:-.35px}
+.at-delivery-icon{display:grid;place-items:center;background:#ff981b20;border:1px solid #ff981b38;border-radius:11px;
+ width:43px;height:43px;color:var(--at-orange);flex-shrink:0}
+.at-delivery-private{display:flex;align-items:center;gap:7px;border:1px solid #2bb9aa55;background:#32d2c112;
+ color:var(--at-teal);font-size:10px;font-weight:770;white-space:nowrap;padding:7px 9px;border-radius:30px}
+.at-delivery-description{color:var(--at-muted);font-size:12px;margin:0;line-height:1.6}
+.at-delivery-manifest{border:1px solid var(--at-border);background:var(--at-surface);border-radius:12px;padding:13px}
+.at-delivery-metrics{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px}
+.at-delivery-metrics>div{border:1px solid var(--at-border);background:var(--at-elevated);padding:13px 11px;
+ border-radius:11px;display:grid;gap:5px}
+.at-delivery-metrics strong{color:var(--at-text);font-size:22px;letter-spacing:-.6px}
+.at-delivery-metrics small{color:var(--at-muted);font-size:10px}
+.at-delivery-parcels{display:grid;gap:7px;max-height:290px;overflow:auto;margin-top:13px}
+.at-delivery-parcel{display:flex;align-items:center;gap:10px;background:var(--at-elevated);border:1px solid var(--at-border);
+ border-radius:9px;padding:10px 12px;min-width:0}
+.at-delivery-parcel>svg{color:var(--at-teal);flex-shrink:0}
+.at-delivery-parcel strong{flex:1;min-width:0;overflow-wrap:anywhere;font-size:11px}
+.at-delivery-tag{font-size:10px;white-space:nowrap;font-weight:800;border:1px solid var(--at-border);
+ border-radius:25px;padding:5px 8px;color:var(--at-muted)}
+.at-package-delivered{color:var(--at-teal);background:#32d2c112;border-color:#32d2c145}
+.at-package-picked_up{color:var(--at-orange);background:#ff981b12;border-color:#ff981b45}
+.at-delivery-form{display:grid;gap:10px;border:1px solid var(--at-border);border-radius:12px;padding:17px;
+ background:var(--at-surface)}
+.at-delivery-form h4{display:flex;align-items:center;gap:10px;font-size:14px;margin:0 0 6px;letter-spacing:-.2px}
+.at-delivery-form h4 svg{color:var(--at-orange)}
+.at-delivery-form label{font-size:11px;color:var(--at-muted);font-weight:740}
+.at-delivery-form input,.at-delivery-form textarea{width:100%;min-width:0;color:var(--at-text);
+ background:var(--at-elevated);border:1px solid var(--at-border);border-radius:10px;padding:12px;
+ outline:none;font-size:12px;font-family:inherit}
+.at-delivery-form textarea{resize:vertical}
+.at-delivery-form input:focus,.at-delivery-form textarea:focus{border-color:var(--at-teal);box-shadow:0 0 0 3px #32d2c116}
+.at-delivery-form input[type=file]{padding:12px;font-size:11px}
+.at-delivery-form input[type=file]::file-selector-button{border:0;background:var(--at-orange);color:#0d1116;
+ border-radius:7px;padding:8px 12px;font-size:11px;font-weight:800;margin-right:12px}
+.at-delivery-form button.at-button{width:100%;min-height:43px}
+.at-delivery-form small{font-size:10px;color:var(--at-muted-soft);line-height:1.65}
+.at-delivery-error,.at-delivery-success,.at-delivery-completed{display:flex;align-items:flex-start;gap:9px;
+ padding:12px 13px;border-radius:10px;font-size:11px;line-height:1.6;margin:0}
+.at-delivery-error{border:1px solid #ec7a784d;background:#c34b4318;color:#ef948d}
+.at-delivery-success,.at-delivery-completed{border:1px solid #32d2c144;background:#32d2c112;color:var(--at-teal)}
+.at-delivery-error>svg,.at-delivery-success>svg,.at-delivery-completed>svg{flex-shrink:0}
+.at-delivery-completed strong{display:block;color:var(--at-text);font-size:12px}
+.at-delivery-completed small{display:block;color:var(--at-muted);font-size:10px;margin-top:3px}
+.at-delivery-note{font-size:11px;line-height:1.6;margin:7px 0;color:var(--at-muted)}
+@media(max-width:700px){
+ .at-delivery{padding:13px}
+ .at-delivery-metrics strong{font-size:18px}
+ .at-delivery-metrics>div{padding:10px 8px}
+ .at-delivery-form{padding:12px}
+}
