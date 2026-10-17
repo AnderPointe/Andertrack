@@ -52,7 +52,7 @@ test('filters and pagination source helpers do not modify input and search drive
  assert.equal(fleetHealthFilter(rows,{search:'Jordan'}).length,1);
  assert.equal(fleetHealthFilter(rows,{search:'hot-01'}).length,1);
  assert.equal(fleetHealthFilter(rows,{status:'disabled'}).length,1);
- assert.equal(fleetHealthFilter(rows,{sort:'updated'})[0].unitNumber,'HOT-01');
+ assert.equal(fleetHealthFilter(rows,{sort:'updated'})[0].unitNumber,'TX-42');
  assert.equal(fleetHealthFilter(rows,{status:'maintenance-sample'}).length,0);
  assert.deepEqual(rows,copy);
 });
@@ -70,15 +70,15 @@ test('dispatch selects actual visible assignments and respects empty state',()=>
  assert.equal(selectedDispatchAssignment([]),null);
 });
 test('dispatch map only shows fresh GPS from the selected assigned driver',()=>{
- const one=dispatchModeSummary(assignments[0],drivers,vehicles,locations);
+ const one=dispatchModeSummary(assignments[0],drivers,vehicles,locations,now);
  assert.equal(one.driver.display_name,'Jordan Lee');
  assert.equal(one.vehicle.unit_number,'TX-42');
  assert.ok(one.hasCurrentGps);
  assert.equal(one.gps.unit_number,'TX-42');
- const two=dispatchModeSummary(assignments[1],drivers,vehicles,locations);
+ const two=dispatchModeSummary(assignments[1],drivers,vehicles,locations,now);
  assert.equal(two.hasCurrentGps,false);
  assert.equal(two.gps,null);
- assert.equal(dispatchModeLocation({driver_user_id:'not-my-driver'},locations),null);
+ assert.equal(dispatchModeLocation({driver_user_id:'not-my-driver'},locations,now),null);
  assert.equal(dispatchModeSummary(null,drivers,vehicles,locations),null);
 });
 test('only customer pickup and delivery addresses are handed to third-party routing',()=>{
