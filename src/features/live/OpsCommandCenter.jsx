@@ -3,10 +3,13 @@ import {
   Activity, ArrowDownRight, ArrowRight, ArrowUpRight, BarChart3, Bell, CheckCircle2,
   ChevronRight, CircleHelp, Clock3, Command, Database, Filter, LayoutDashboard, LockKeyhole,
   LogOut, MapPinned, Menu, Moon, Package, Radio, RefreshCw, Route, Search, Settings2,
-  ShieldCheck, Sun, Truck, Users, Wifi, X, Zap,
+  ShieldCheck, Sun, Truck, Users, Wifi, X, Zap, Sparkles, Download, Keyboard,
 } from 'lucide-react';
 import FleetMap from './FleetMap.jsx';
 import { ACTIVE_STATUSES, freshGpsPosition, visibleShipments, selectedVisibleShipment } from '../../lib/operations.js';
+import { deriveOperationalAlerts, deriveActivityStream, shipmentCsv } from '../../lib/command-intelligence.js';
+import { AlertList, AlertDrawer, CommandPalette } from './SmartOperations.jsx';
+import './smart-operations.css';
 import './command-center.css';
 import DispatchRequestQueue from './DispatchRequestQueue.jsx';
 import AssignmentActions from './AssignmentActions.jsx';
@@ -15,6 +18,7 @@ const NAV = [
   { id: 'overview', label: 'Overview', icon: LayoutDashboard },
   { id: 'tracking', label: 'Live tracking', icon: MapPinned },
   { id: 'dispatch', label: 'Dispatch center', icon: Route },
+  { id: 'intelligence', label: 'Smart Operations', icon: Sparkles },
   { id: 'fleet', label: 'Drivers & fleet', icon: Truck },
   { id: 'analytics', label: 'Analytics', icon: BarChart3 },
   { id: 'settings', label: 'Workspace settings', icon: Settings2 },
@@ -47,10 +51,10 @@ function MetricCard({ icon: Icon, label, value, detail, accent = 'orange' }) {
     <strong>{value}</strong><div className="at-metric-foot"><span className="at-metric-signal" />{detail}</div>
   </article>;
 }
-function ShipmentPanel({ assignments, selected, onSelect, filter, setFilter, query, embedded = false }) {
+function ShipmentPanel({ assignments, selected, onSelect, filter, setFilter, query, onExport, embedded = false }) {
   const items = useMemo(() => visibleShipments(assignments,filter,query),[assignments,filter,query]);
   return <section className={'at-surface at-shipments ' + (embedded ? 'at-embedded' : '')}>
-    <CardHeading eyebrow="SHIPMENT INTELLIGENCE" title="Active order pipeline" action={<span className="at-count">{items.length} visible</span>}/>
+    <CardHeading eyebrow="SHIPMENT INTELLIGENCE" title="Active order pipeline" action={<div className="at-intel-quick-actions"><span className="at-count">{items.length} visible</span><button type="button" onClick={()=>onExport?.(items)} disabled={items.length===0} aria-label="Export visible shipments as CSV"><Download size={15}/> Export CSV</button></div>}/>
     <div className="at-filter-row" role="group" aria-label="Filter shipments">
       {[['all','All loads'],['active','In progress'],['pending','Awaiting'],['delivered','Delivered']].map(([id,label]) =>
         <button key={id} type="button" className={filter === id ? 'at-chip active' : 'at-chip'} onClick={() => setFilter(id)}>{label}</button>)}
@@ -182,6 +186,10 @@ export default function OpsCommandCenter({
   const [selectedId,setSelectedId]=useState('');
   const [mobileMenu,setMobileMenu]=useState(false);
   const [focusedPin,setFocusedPin]=useState(null);
+  const [alertDrawerOpen,setAlertDrawerOpen]=useState(false);
+  const [paletteOpen,setPaletteOpen]=useState(false);
+  const [clock,setClock]=useState(()=>Date.now());
+  const [snoozes,setSnoozes]=useState(()=>{try{return JSON.parse(localStorage.getItem('andertrack_alert_snoozes')||'{}');}catch{return {};}});
   const ordered = useMemo(()=>[...assignments].sort((a,b)=>Date.parse(b.created_at)-Date.parse(a.created_at)),[assignments]);
   const visible = useMemo(() => visibleShipments(ordered,filter,query),[ordered,filter,query]);
   const selected=selectedVisibleShipment(visible,selectedId);
@@ -190,11 +198,51 @@ export default function OpsCommandCenter({
   const planner=role==='admin'||role==='dispatcher';
   const onChoose = location => setFocusedPin(location);
   const open = page=>{setView(page);setMobileMenu(false);};
+  useEffect(()=>{
+    const timer=setInterval(()=>setClock(Date.now()),30_000);
+    return ()=>clearInterval(timer);
+  },[]);
+  useEffect(()=>{
+    const handle=e=>{if((e.metaKey||e.ctrlKey)&&e.key.toLowerCase()==='k'){
+      e.preventDefault();setPaletteOpen(value=>!value);
+    }};
+    window.addEventListener('keydown',handle);
+    return ()=>window.removeEventListener('keydown',handle);
+  },[]);
   const total=ordered.length, active=ordered.filter(a=>ACTIVE_STATES.has(a.status)).length;
   const enRoute=ordered.filter(a=>a.status==='in_transit').length;
   const delivered=ordered.filter(a=>a.status==='delivered').length;
   const available=drivers.filter(d=>d.availability==='available').length;
   const fresh=locations.filter(l=>freshGpsPosition(l)).length;
+  const alerts=useMemo(()=>deriveOperationalAlerts({assignments:ordered,requests:dispatchRequests,drivers,locations,planner:planner||isDemo,userId},clock),
+    [ordered,dispatchRequests,drivers,locations,planner,isDemo,userId,clock]);
+  const activity=useMemo(()=>deriveActivityStream({assignments:ordered,requests:dispatchRequests,locations,planner:planner||isDemo,userId},clock),
+    [ordered,dispatchRequests,locations,planner,isDemo,userId,clock]);
+  const scopedSnoozes=useMemo(()=>Object.fromEntries(Object.entries(snoozes).filter(([key])=>key.startsWith(organizationId+':'))
+    .map(([key,value])=>[key.slice(organizationId.length+1),value])),[snoozes,organizationId]);
+  const activeAlerts=alerts.filter(a=>!scopedSnoozes[a.id]||Number(scopedSnoozes[a.id])<=clock);
+  const changeSnooze=(id,until)=>setSnoozes(previous=>{
+    const next={...previous}; const key=organizationId+':'+id;
+    if(until)next[key]=until;else delete next[key];
+    try{localStorage.setItem('andertrack_alert_snoozes',JSON.stringify(next));}catch{/* private browsing */}
+    return next;
+  });
+  const onSnooze=id=>changeSnooze(id,Date.now()+30*60_000);
+  const onRestore=id=>changeSnooze(id,0);
+  const goToItem=item=>{
+    setQuery('');setFilter('all');
+    if(item.assignmentId)setSelectedId(item.assignmentId);
+    open(item.view||'overview');
+  };
+  const exportShipments=items=>{
+    const csv=shipmentCsv(items);
+    const blob=new Blob(['\uFEFF',csv],{type:'text/csv;charset=utf-8'});
+    const url=URL.createObjectURL(blob);
+    const element=document.createElement('a');
+    element.href=url;element.download='andertrack-shipments-'+new Date().toISOString().slice(0,10)+'.csv';
+    document.body.appendChild(element);element.click();element.remove();
+    setTimeout(()=>URL.revokeObjectURL(url),2000);
+  };
   const metrics=[
     {label:'Total shipments',value:total,detail:'Visible to your organization',icon:Package,accent:'orange'},
     {label:'Active deliveries',value:active,detail:enRoute+' currently in transit',icon:Route,accent:'teal'},
@@ -233,7 +281,8 @@ export default function OpsCommandCenter({
         <div className="at-topbar-actions">
           <label className="at-global-search"><Search size={17}/><input value={query} onChange={e=>{setQuery(e.target.value);if(e.target.value.trim())open('dispatch');}}
             placeholder="Search loads, locations, customers..." aria-label="Search shipments"/></label>
-          <button className="at-icon-button at-alert-shortcut" onClick={()=>open('dispatch')} title="View dispatch queue" aria-label="View dispatch notifications"><Bell size={19}/>{dispatchRequests.length>0&&<span className="at-notification-count">{dispatchRequests.length}</span>}</button>
+          <button className="at-icon-button at-alert-shortcut" onClick={()=>setPaletteOpen(true)} title="Command palette (Ctrl/⌘+K)" aria-label="Open command palette"><Keyboard size={19}/></button>
+          <button className={'at-icon-button at-alert-shortcut '+(activeAlerts.length?'has-alerts':'')} onClick={()=>setAlertDrawerOpen(true)} title="Review operational alerts" aria-label="Review operational alerts"><Bell size={19}/>{activeAlerts.length>0&&<span className="at-notification-count">{activeAlerts.length}</span>}</button>
           <button className="at-icon-button" onClick={()=>setTheme(t=>t==='dark'?'light':'dark')} title="Toggle light/dark appearance"
             aria-label="Toggle theme">{theme==='dark'?<Sun size={19}/>:<Moon size={19}/>}</button>
           <button className="at-icon-button" onClick={reload} disabled={loading} title="Refresh operational data" aria-label="Refresh data"><RefreshCw size={18} className={loading?'at-spinning':''}/></button>
@@ -249,6 +298,7 @@ export default function OpsCommandCenter({
               view==='dispatch'?'Manage the waiting line, plan assignments and follow every load.':
               view==='fleet'?'Verified people and ready equipment, side by side.':
               view==='analytics'?'Operational trends based on actual records, never estimated activity.':
+              view==='intelligence'?'Live operational signals, quick triage and verifiable recent activity.':
               'Workspace controls, session security and source transparency.'}</p>
           </div>
           <div className="at-heading-actions">
@@ -280,12 +330,25 @@ export default function OpsCommandCenter({
                 vehicles={vehicles} onChanged={reload}/>}
             </div>
             <div className="at-bottom-grid">
-              <ShipmentPanel assignments={ordered} selected={selected} onSelect={setSelectedId} filter={filter} setFilter={setFilter} query={query}/>
+              <ShipmentPanel assignments={ordered} selected={selected} onSelect={setSelectedId} filter={filter} setFilter={setFilter} query={query} onExport={exportShipments}/>
               <PerformancePanel assignments={ordered} drivers={drivers}/>
             </div>
+            <div className="at-overview-intelligence"><AlertList alerts={alerts} activity={activity} snoozes={scopedSnoozes} onNavigate={goToItem}
+                onSnooze={onSnooze} onRestore={onRestore} isDemo={isDemo} heading="Smart Operations"/>
+              <section className="at-surface at-intel-guide"><Sparkles size={28}/><span className="at-kicker">OPERATIONS SUPERPOWERS</span>
+                <h3>Act before a small issue becomes a bottleneck.</h3><p>Find aging requests, stale vehicle reports and loads needing attention using auditable rules. No fictional predictions.</p>
+                <p><kbd>Ctrl / ⌘</kbd> + <kbd>K</kbd> to search loads, drivers and pages instantly.</p>
+                <button type="button" className="at-button at-button-primary" onClick={()=>open('intelligence')}>Open Smart Operations <ArrowRight size={16}/></button>
+              </section></div>
             <div className="at-detail-bottom"><ShipmentDetail active={selected} driver={currentDriver} role={role}
               organizationId={organizationId} currentUserId={userId} profile={profile} drivers={drivers} vehicles={vehicles} reload={reload} isDemo={isDemo}/></div>
           </>}
+          {view==='intelligence'&&<><div className="at-intel-quick-actions">
+            <button type="button" onClick={()=>setPaletteOpen(true)}><Keyboard size={16}/> Open command palette</button>
+            <button type="button" onClick={()=>open('dispatch')}><Route size={16}/> Dispatch center</button>
+            <button type="button" onClick={reload} disabled={loading}><RefreshCw size={16}/> Refresh operational signals</button>
+          </div><AlertList showAll alerts={alerts} activity={activity} snoozes={scopedSnoozes} onNavigate={goToItem}
+            onSnooze={onSnooze} onRestore={onRestore} isDemo={isDemo} heading="Operational intelligence"/></>}
           {view==='tracking'&&<>
             <div className="at-tracking-stats">
               <MetricCard icon={Radio} label="GPS reporters" value={fresh} detail="Pings in the last 5 minutes" accent="teal"/>
@@ -308,7 +371,7 @@ export default function OpsCommandCenter({
               <div className="at-demo-note"><LockKeyhole size={15}/> Demo only — claim controls disabled.</div></section>:
               <DispatchRequestQueue organizationId={organizationId} role={role} currentUserId={userId} profile={profile}
                 requests={dispatchRequests} drivers={drivers} assignments={assignments} vehicles={vehicles} onChanged={reload}/>}
-              <ShipmentPanel assignments={ordered} selected={selected} onSelect={setSelectedId} filter={filter} setFilter={setFilter} query={query}/>
+              <ShipmentPanel assignments={ordered} selected={selected} onSelect={setSelectedId} filter={filter} setFilter={setFilter} query={query} onExport={exportShipments}/>
             </div>
             <ShipmentDetail active={selected} driver={currentDriver} role={role} organizationId={organizationId}
               currentUserId={userId} profile={profile} drivers={drivers} vehicles={vehicles} reload={reload} isDemo={isDemo}/>
@@ -333,6 +396,9 @@ export default function OpsCommandCenter({
             </section>
           </div>}
         </>}
+        <AlertDrawer open={alertDrawerOpen} alerts={alerts} activity={activity} snoozes={scopedSnoozes} onNavigate={goToItem}
+          onSnooze={onSnooze} onRestore={onRestore} onClose={()=>setAlertDrawerOpen(false)} isDemo={isDemo}/>
+        <CommandPalette open={paletteOpen} onClose={()=>setPaletteOpen(false)} onNavigate={goToItem} assignments={ordered} drivers={drivers} pages={NAV}/>
         {focusedPin&&<div className="at-floating-detail" role="status"><Truck size={19}/><div><strong>{focusedPin.unit_number||focusedPin.display_name||'Fleet unit'}</strong>
           <small>{human(focusedPin.status)} · Last ping {focusedPin.last_ping_at?new Date(focusedPin.last_ping_at).toLocaleString():'unknown'}</small></div>
           <button onClick={()=>setFocusedPin(null)} aria-label="Dismiss fleet detail"><X size={17}/></button></div>}
