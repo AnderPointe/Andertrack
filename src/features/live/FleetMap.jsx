@@ -11,7 +11,7 @@ export default function FleetMap({ locations = [], theme = 'dark', onChoose, cla
   const host = useRef(null);
   const map = useRef(null);
   const markers = useRef(null);
-  const valid = locations.filter(item => Number.isFinite(Number(item.latitude)) &&
+  const valid = locations.filter(item => item.latitude != null && item.longitude != null && Number.isFinite(Number(item.latitude)) &&
     Number.isFinite(Number(item.longitude)) &&
     Number(item.latitude) >= -90 && Number(item.latitude) <= 90 &&
     Number(item.longitude) >= -180 && Number(item.longitude) <= 180);
