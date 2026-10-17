@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import {
   DEMO_CHECKLIST,dutySlotToTime,summarizeDutySlots,dutySegmentsFromSlots,
   paintDutyRange,payrollScenario,jurisdictionReconciliation,proofReadiness,dutyScenarioCsv,
+  nextDriverMissionStatus,liveDriverMissionCounts,
 } from '../src/lib/driver-cockpit-pro.js';
 import {DEMO_PEOPLE,safeDutyLog} from '../src/lib/driver-cockpit.js';
 
@@ -76,4 +77,23 @@ test('export CSV is prominently sample-only and spreadsheet-formula safe',()=>{
   assert.ok(csv.includes("'=SUSPICIOUS()"));
   assert.ok(csv.startsWith('\uFEFF'));
   assert.equal(csv.trim().split('\r\n').length,2);
+});
+
+test('live mission state tracks only recorded assignment and scheduled due time',()=>{
+ const current=Date.parse('2026-10-17T12:00:00Z');
+ const assigned={id:'a',status:'in_transit',scheduled_delivery_at:'2026-10-17T13:00:00Z'};
+ let status=nextDriverMissionStatus(assigned,current);
+ assert.equal(status.label,'Deliver and capture proof');
+ assert.equal(status.scheduleKind,'approaching');
+ assert.equal(nextDriverMissionStatus(assigned,current+7200000).scheduleKind,'past-due');
+ assert.equal(nextDriverMissionStatus({...assigned,status:'delivered'},current+7200000).scheduleKind,'completed');
+ assert.equal(nextDriverMissionStatus({...assigned,scheduled_delivery_at:null}).scheduleKind,'unscheduled');
+ assert.equal(nextDriverMissionStatus({status:'offered'}).label,'Offer awaiting decision');
+});
+test('mission counters use only supplied permitted assignments and do not invent trips',()=>{
+ assert.deepEqual(liveDriverMissionCounts([]),{total:0,active:0,offers:0,delivered:0});
+ assert.deepEqual(liveDriverMissionCounts([
+  {status:'offered'},{status:'accepted'},{status:'in_transit'},
+  {status:'delivered'},{status:'cancelled'},
+ ]),{total:5,active:2,offers:1,delivered:1});
 });
