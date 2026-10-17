@@ -22,7 +22,7 @@ const input={
 };
 test('triage detects explainable issues only above thresholds',()=>{
   const alerts=deriveOperationalAlerts(input,at);
-  assert.deepEqual(alerts.filter(x=>x.severity==='high').map(x=>x.id),['queue:req1','stale-gps:gps1']);
+  assert.deepEqual(alerts.filter(x=>x.severity==='high').map(x=>x.id),['stale-gps:gps1','queue:req1']); // oldest high-severity signal first
   assert.ok(alerts.some(x=>x.id==='unassigned:a'&&x.assignmentId==='a'));
   assert.ok(alerts.some(x=>x.id==='license:driver1'));
   assert.ok(alerts.some(x=>x.id==='invalid-gps:gps3'));
