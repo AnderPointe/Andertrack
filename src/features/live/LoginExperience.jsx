@@ -62,6 +62,6 @@ export default function LoginExperience({ email, setEmail, sent, busy, error, on
         <div className="at-auth-security"><Fingerprint size={17}/><span>Private organization data stays protected. Demo mode uses clearly labeled sample records and cannot update live assignments.</span></div>
       </section>
     </div>
-    <footer className="at-auth-footer"><span>© ANDE﻿RTRACK · INTELLIGENT LOGISTICS SYSTEMS</span><span>ORANGE / TEAL / WHITE / BLACK</span></footer>
+    <footer className="at-auth-footer"><span>© ANDERTRACK · INTELLIGENT LOGISTICS SYSTEMS</span><span>ORANGE / TEAL / WHITE / BLACK</span></footer>
   </div>;
 }
