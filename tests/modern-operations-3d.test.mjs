@@ -1,7 +1,7 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {
- VEHICLE_FORMS,VEHICLE_COLORS,vehicleForm,vehicleDisplay,assignedVehicleForDriver,
+ VEHICLE_FORMS,VEHICLE_COLORS,VEHICLE_MODEL_PRESETS,previewPresetForVehicle,vehicleForm,vehicleDisplay,assignedVehicleForDriver,
  dispatcherDriverProfiles,viewModelLabel,
 } from '../src/lib/vehicle-3d.js';
 import {
@@ -78,4 +78,12 @@ test('delivery KPI and date histogram use only recorded shipment data',()=>{
  assert.equal(series.length,3);
  assert.deepEqual(series.map(x=>x.count),[1,1,1]);
  assert.equal(shipmentDashboardCounts([]).completionRate,0);
+});
+
+test('manufacturer/model preview controls are independent from actual assignment inventory',()=>{
+ assert.equal(VEHICLE_MODEL_PRESETS.length,11);
+ assert.equal(previewPresetForVehicle(vehicles[0]),'freightliner-cascadia');
+ assert.equal(previewPresetForVehicle({make:'Volvo',model:'VNL 760'}),'volvo-vnl');
+ assert.equal(previewPresetForVehicle({make:'Generic',model:'Unrecorded'}),'');
+ assert.equal(VEHICLE_MODEL_PRESETS.find(p=>p.id==='ford-transit').form,'cargo_van');
 });
