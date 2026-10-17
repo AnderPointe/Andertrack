@@ -203,7 +203,7 @@ export default function OpsCommandCenter({
   profile, assignments=[], dispatchRequests=[], drivers=[], vehicles=[], locations=[], error='',
   loading=false, sync='Not connected', reload=()=>{}, onDemo=()=>{}, onSignOut=()=>{},
 }) {
-  const [view,setView]=useState('overview');
+  const [view,setView]=useState(isDemo?'delivery-overview':'overview');
   const [theme,setTheme]=useState(() => { try { return localStorage.getItem('andertrack_ui_theme') === 'light' ? 'light' : 'dark'; } catch { return 'dark'; } });
   useEffect(() => { try { localStorage.setItem('andertrack_ui_theme',theme); } catch { /* Storage may be unavailable. */ } },[theme]);
   const [query,setQuery]=useState('');
