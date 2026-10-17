@@ -1,7 +1,7 @@
 import React,{useEffect,useRef,useState} from 'react';
 import * as THREE from 'three';
 import {Check,RotateCcw,Truck} from 'lucide-react';
-import {VEHICLE_FORMS,VEHICLE_COLORS,vehicleForm,vehicleDisplay} from '../../lib/vehicle-3d.js';
+import {VEHICLE_FORMS,VEHICLE_COLORS,VEHICLE_MODEL_PRESETS,previewPresetForVehicle,vehicleForm,vehicleDisplay} from '../../lib/vehicle-3d.js';
 import './vehicle-3d.css';
 
 // Original parametric vehicle forms. Generic representations, never claimed to be
@@ -183,29 +183,32 @@ export default function Vehicle3D({
 }) {
   const display=vehicleDisplay(vehicle);
   const [form,setForm]=useState(()=>display.form);
+  const [preset,setPreset]=useState(()=>previewPresetForVehicle(vehicle));
+  const [reducedMotion,setReducedMotion]=useState(false);
   const [color,setColor]=useState('arctic');
   const [view,setView]=useState('three-quarter');
   const [zoom,setZoom]=useState(1);
   const [rotate,setRotate]=useState(false);
   const [error,setError]=useState('');
-  useEffect(()=>{setForm(vehicleForm(vehicle?.vehicle_type));setError('');},[vehicle?.id,vehicle?.vehicle_type]);
+  useEffect(()=>{setForm(vehicleForm(vehicle?.vehicle_type));setPreset(previewPresetForVehicle(vehicle));setError('');},[vehicle?.id,vehicle?.vehicle_type,vehicle?.make,vehicle?.model]);
   useEffect(()=>{
     const media=window.matchMedia?.('(prefers-reduced-motion: reduce)');
     if(!media)return undefined;
-    const update=()=>{if(media.matches)setRotate(false);};
+    const update=()=>{setReducedMotion(media.matches);if(media.matches)setRotate(false);};
     update();media.addEventListener?.('change',update);
     return ()=>media.removeEventListener?.('change',update);
   },[]);
   const choice=VEHICLE_FORMS.find(x=>x.id===form)||VEHICLE_FORMS[0];
+  const chosenPreset=VEHICLE_MODEL_PRESETS.find(x=>x.id===preset)||null;
   return <section className={'at-v3d '+(compact?'compact':'')}>
     <div className="at-v3d-heading"><div><span>FLEET VISUALIZATION / INTERACTIVE 3D</span>
       <h3><Truck size={19}/>{title}</h3></div><span className="at-v3d-chip">{isDemo?'DEMO SHOWROOM':'GENERIC 3D MODEL'}</span></div>
     <div className="at-v3d-stage">
       {!error?<SceneCanvas form={form} color={VEHICLE_COLORS.find(c=>c.id===color)?.hex||'#dee9e8'}
-        rotating={rotate} view={view} zoom={zoom} onError={setError}/>:
+        rotating={rotate&&!reducedMotion} view={view} zoom={zoom} onError={setError}/>:
         <div className="at-v3d-fallback"><Truck size={47}/><span>{error}</span></div>}
-      <div className="at-v3d-stage-label"><strong>{choice.label}</strong><span>{choice.subtitle}</span></div>
-      <div className="at-v3d-camera"><button onClick={()=>setRotate(r=>!r)} aria-label={rotate?'Pause rotation':'Rotate automatically'}>
+      <div className="at-v3d-stage-label"><strong>{chosenPreset?chosenPreset.make+' '+chosenPreset.model:choice.label}</strong><span>{chosenPreset?'Generic '+choice.label+' silhouette (not OEM CAD)':choice.subtitle}</span></div>
+      <div className="at-v3d-camera"><button disabled={reducedMotion} onClick={()=>setRotate(r=>!r)} aria-label={rotate?'Pause rotation':'Rotate automatically'}>
         <RotateCwIcon spinning={rotate}/>{rotate?'Pause':'Rotate'}</button>
         <button onClick={()=>setView('three-quarter')}>3/4</button>
         <button onClick={()=>setView('front')}>Front</button>
@@ -216,9 +219,18 @@ export default function Vehicle3D({
       <div><span>Recorded manufacturer / model</span><strong>{display.hasMakeModel?display.title:'Not recorded'}</strong></div>
     </div>
     <div className="at-v3d-bottom">
-      {allowSelection&&<label>Preview a vehicle body
-        <select value={form} onChange={e=>setForm(e.target.value)}>
+      {allowSelection&&<label>Preview vehicle body
+        <select value={form} onChange={e=>{setForm(e.target.value);setPreset('');}}>
           {VEHICLE_FORMS.map(v=><option key={v.id} value={v.id}>{v.label}</option>)}
+        </select></label>}
+      {allowSelection&&<label>Make / model concept preview
+        <select aria-label="Select illustrative make and model" value={preset} onChange={e=>{
+          const id=e.target.value;setPreset(id);
+          const match=VEHICLE_MODEL_PRESETS.find(x=>x.id===id);
+          if(match)setForm(match.form);
+        }}>
+          <option value="">Generic {choice.label}</option>
+          {VEHICLE_MODEL_PRESETS.map(x=><option key={x.id} value={x.id}>{x.make} {x.model}</option>)}
         </select></label>}
       <label>Paint preview <span className="at-v3d-swatches">
         {VEHICLE_COLORS.map(c=><button key={c.id} type="button" title={c.name}
