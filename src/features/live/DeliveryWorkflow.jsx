@@ -178,6 +178,22 @@ export default function DeliveryWorkflow({
     }
   }
 
+  if (isDemo) return <section className="at-delivery" aria-label="Sample delivery workflow">
+    <div className="at-delivery-title">
+      <div className="at-delivery-heading"><span className="at-delivery-icon"><PackageCheck size={19}/></span>
+        <div><span className="at-kicker">SAMPLE WORKFLOW · NO DATABASE ACCESS</span><h3>Delivery & package verification</h3></div>
+      </div>
+      <span className="at-delivery-private"><ShieldCheck size={14}/> Private evidence</span>
+    </div>
+    <p className="at-delivery-description">Drivers can verify package custody and submit recipient/photo proof after the shipment reaches the appropriate state. This is a read-only design example.</p>
+    <div className="at-delivery-metrics">
+      <div><strong>3</strong><small>Example packages</small></div>
+      <div><strong>3</strong><small>Picked up</small></div>
+      <div><strong>2</strong><small>Delivered</small></div>
+    </div>
+    <p className="at-delivery-note">Barcode scanning and photo submission are disabled in demo mode. A verified assigned driver must use the live workspace.</p>
+  </section>;
+
   if (!canView) return null;
 
   return <section className="at-delivery" aria-label="Package manifest and proof of delivery">
