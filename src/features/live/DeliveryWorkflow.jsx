@@ -2,14 +2,9 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Camera, CheckCircle2, Clock3, FileCheck2, PackageCheck, ScanBarcode, ShieldAlert, ShieldCheck } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import './delivery-workflow.css';
+import { ALLOWED_PHOTO_MIME, validateEvidencePhoto, deliveryCapabilities } from '../../lib/delivery-guards.js';
 
 const BUCKET = 'at-delivery-evidence';
-const MAX_PHOTO_BYTES = 10 * 1024 * 1024;
-const PHOTO_TYPES = Object.freeze({
-  'image/jpeg': 'jpg',
-  'image/png': 'png',
-  'image/webp': 'webp',
-});
 const packageLabel = value => String(value || 'pending').replaceAll('_', ' ');
 const timestamp = value => {
   if (!value) return 'Not recorded';
@@ -48,19 +43,17 @@ export default function DeliveryWorkflow({
   const activeRequestRef = useRef(0);
 
   const planner = role === 'admin' || role === 'dispatcher';
-  const isAssignedDriver = role === 'driver' &&
-    Boolean(currentUserId) && assignment?.driver_user_id === currentUserId;
-  const canView = !isDemo && Boolean(organizationId && id) && (planner || isAssignedDriver);
   const courier = assignment?.division === 'Class C';
-  const showWorkflow = ['at_pickup', 'picked_up', 'in_transit', 'delivered'].includes(assignment?.status);
-  const canPickupScan = isAssignedDriver && courier && assignment?.status === 'at_pickup';
-  const canDeliverScan = isAssignedDriver && courier && assignment?.status === 'in_transit';
-  const canConfirmDelivery = isAssignedDriver && assignment?.status === 'in_transit' && profile?.license_verified === true;
+  const {canView, canScanPickup:canPickupScan, canScanDelivery:canDeliverScan,
+    canConfirmDelivery} = deliveryCapabilities({
+      assignment,organizationId,userId:currentUserId,role,
+      verified:profile?.license_verified,isDemo,
+    });
   const pickedUp = packages.filter(p => p.status === 'picked_up' || p.status === 'delivered').length;
   const delivered = packages.filter(p => p.status === 'delivered').length;
 
   const refresh = useCallback(async (requestId = ++activeRequestRef.current) => {
-    if (!canView || !showWorkflow || !supabase) return;
+    if (!canView || !supabase) return;
     setLoading(true);
     const queries = [
       courier ? supabase.from('at_assignment_packages')
@@ -93,7 +86,7 @@ export default function DeliveryWorkflow({
     } finally {
       if (activeRequestRef.current === requestId) setLoading(false);
     }
-  }, [canView, showWorkflow, courier, organizationId, id]);
+  }, [canView, courier, organizationId, id]);
 
   useEffect(() => {
     const requestId = ++activeRequestRef.current;
@@ -106,9 +99,9 @@ export default function DeliveryWorkflow({
     setNotes('');
     setPhoto(null);
     if (fileInputRef.current) fileInputRef.current.value = '';
-    if (canView && showWorkflow) void refresh(requestId);
+    if (canView) void refresh(requestId);
     return () => { activeRequestRef.current++; };
-  }, [refresh, canView, showWorkflow]);
+  }, [refresh, canView]);
 
   async function submitScan(event) {
     event.preventDefault();
@@ -139,10 +132,8 @@ export default function DeliveryWorkflow({
   async function submitDelivery(event) {
     event.preventDefault();
     if (!supabase || busy || !canConfirmDelivery || !recipient.trim() || !photo) return;
-    if (!Object.hasOwn(PHOTO_TYPES, photo.type) || photo.size < 1 || photo.size > MAX_PHOTO_BYTES) {
-      setError('Attach a JPEG, PNG, or WebP photo between 1 byte and 10 MB.');
-      return;
-    }
+    const photoError=validateEvidencePhoto(photo);
+    if (photoError) {setError(photoError);return;}
     if (!globalThis.crypto?.randomUUID) {
       setError('Secure HTTPS access is required for uploading delivery evidence.');
       return;
@@ -154,7 +145,7 @@ export default function DeliveryWorkflow({
     try {
       // Server policy validates the assignment, member, driver and status again.
       const evidencePath = [organizationId, id, currentUserId,
-        crypto.randomUUID() + '.' + PHOTO_TYPES[photo.type]].join('/');
+        crypto.randomUUID() + '.' + ALLOWED_PHOTO_MIME[photo.type]].join('/');
       const { error: uploadError } = await supabase.storage.from(BUCKET)
         .upload(evidencePath, photo, {
           contentType: photo.type,
@@ -187,7 +178,7 @@ export default function DeliveryWorkflow({
     }
   }
 
-  if (!canView || !showWorkflow) return null;
+  if (!canView) return null;
 
   return <section className="at-delivery" aria-label="Package manifest and proof of delivery">
     <div className="at-delivery-title">
