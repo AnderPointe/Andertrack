@@ -170,7 +170,7 @@ function FleetPanel({ drivers, vehicles, locations }) {
 }
 
 export default function OpsCommandCenter({
-  isDemo=false, session, memberships=[], organizationId, setOrganizationId=()=>{}, role='',
+  isDemo=false, session, memberships=[], membershipLoaded=true, organizationId, setOrganizationId=()=>{}, role='',
   profile, assignments=[], dispatchRequests=[], drivers=[], vehicles=[], locations=[], error='',
   loading=false, sync='Not connected', reload=()=>{}, onDemo=()=>{}, onSignOut=()=>{},
 }) {
@@ -201,7 +201,7 @@ export default function OpsCommandCenter({
     {label:'Drivers available',value:available,detail:drivers.length+' drivers on roster',icon:Users,accent:'orange'},
     {label:'Pending requests',value:dispatchRequests.length,detail:delivered+' loads delivered',icon:Clock3,accent:'teal'},
   ];
-  const noMembership=!isDemo && memberships.length===0 && !loading;
+  const noMembership=!isDemo && membershipLoaded && memberships.length===0;
   const noDriver=!isDemo && !planner && !profile;
   return <div className="at-workspace" data-theme={theme}>
     <aside className={'at-sidebar '+(mobileMenu?'at-sidebar-open':'')}>
@@ -258,7 +258,7 @@ export default function OpsCommandCenter({
           </div>
         </section>
         {error&&<div className="at-alert" role="alert"><ShieldCheck size={17}/>{error}</div>}
-        {noMembership?<section className="at-surface at-access-needed"><LockKeyhole size={30}/><h2>Organization access pending</h2>
+        {!isDemo && !membershipLoaded ? <section className="at-surface at-access-needed" role="status"><RefreshCw size={26} className="at-spinning"/><h2>Checking workspace access</h2><p>Loading approved organizations and roles…</p></section> : noMembership?<section className="at-surface at-access-needed"><LockKeyhole size={30}/><h2>Organization access pending</h2>
           <p>A trusted administrator must assign your account to an organization. No customer or shipment data is exposed until access is approved.</p></section>:
         <>
           {!isDemo&&memberships.length>1&&<div className="at-org-select"><label htmlFor="at-org">Active organization</label><select id="at-org" value={organizationId} onChange={e=>setOrganizationId(e.target.value)}>{memberships.map(m=>
