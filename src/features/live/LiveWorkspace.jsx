@@ -57,6 +57,7 @@ export default function LiveWorkspace({ onDemo }) {
   const identityRef = useRef('');
   const scopeRef = useRef('');
   const reloadGeneration = useRef(0);
+  const vehicleMetadataUnavailable = useRef(false);
 
   useEffect(() => {
     if (!supabase) { setAuthReady(true); return; }
@@ -128,13 +129,34 @@ export default function LiveWorkspace({ onDemo }) {
     if (!isPlanner) requests.push(supabase.from('at_driver_profiles').select('user_id,display_name,license_class,license_verified,availability').eq('organization_id',organizationId).eq('user_id',userId).maybeSingle());
     else requests.push(supabase.from('driver_location_current').select('id,driver_id,latitude,longitude,heading,speed_mph,accuracy_meters,status,unit_number,vehicle_type,battery_percent,signal_strength,last_ping_at').eq('company_id',organizationId).limit(250));
     const results = await Promise.all(requests);
+    // Optional additive inventory metadata. A missing migration or RLS denial
+    // must NEVER break core dispatch loading. Probe only once per session when
+    // unavailable; existing production schema remains fully supported.
+    let enhancedVehicleData = results[2]?.data || [];
+    if (!results[2]?.error && !vehicleMetadataUnavailable.current && enhancedVehicleData.length) {
+      try {
+        const { data: inventoryMetadata, error: metadataError } = await supabase
+          .from('at_vehicles')
+          .select('id,make,model,model_year,paint_hex')
+          .eq('organization_id',organizationId).limit(250);
+        if (metadataError) vehicleMetadataUnavailable.current = true;
+        else {
+          const byId = new Map((inventoryMetadata||[]).map(record=>[record.id,record]));
+          enhancedVehicleData = enhancedVehicleData.map(vehicle=>({
+            ...vehicle,...(byId.get(vehicle.id)||{}),
+          }));
+        }
+      } catch {
+        vehicleMetadataUnavailable.current = true;
+      }
+    }
     if (scopeRef.current !== requestedScope || generation !== reloadGeneration.current) return;
     const critical = results.slice(0, isPlanner ? 4 : 5);
     if (critical.some(r => r.error)) setError(critical.find(r => r.error).error.message);
     else {
       setAssignments(results[0].data || []);
       setDrivers(results[1].data || []);
-      setVehicles(results[2].data || []);
+      setVehicles(enhancedVehicleData);
       setDispatchRequests(results[3].data || []);
       setProfile(isPlanner ? null : results[4].data);
       setLocations(isPlanner && !results[4].error ? results[4].data || [] : []);
