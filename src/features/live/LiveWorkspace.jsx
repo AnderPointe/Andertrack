@@ -120,9 +120,9 @@ export default function LiveWorkspace({ onDemo }) {
     const requestedScope = userId + ':' + organizationId;
     const generation = ++reloadGeneration.current;
     const requests = [
-      supabase.from('at_assignments').select('id,reference,division,customer_name,commodity,pickup_address,dropoff_address,estimated_miles,status,driver_user_id,created_at,updated_at,scheduled_pickup_at,scheduled_delivery_at').eq('organization_id',organizationId).order('created_at',{ascending:false}).limit(150),
+      supabase.from('at_assignments').select('id,reference,division,customer_name,commodity,pickup_address,dropoff_address,estimated_miles,status,driver_user_id,vehicle_id,created_at,updated_at,scheduled_pickup_at,scheduled_delivery_at').eq('organization_id',organizationId).order('created_at',{ascending:false}).limit(150),
       supabase.from('at_driver_profiles').select('user_id,display_name,license_class,license_verified,availability').eq('organization_id',organizationId).limit(200),
-      supabase.from('at_vehicles').select('id,unit_number,vehicle_type,required_license_class,enabled').eq('organization_id',organizationId).limit(250),
+      supabase.from('at_vehicles').select('id,unit_number,vehicle_type,required_license_class,payload_capacity_lbs,enabled').eq('organization_id',organizationId).limit(250),
       supabase.from('at_dispatch_requests').select('id,queue_number,driver_user_id,requested_at,status').eq('organization_id',organizationId).eq('status','queued').order('queue_number',{ascending:true}).limit(200)
     ];
     if (!isPlanner) requests.push(supabase.from('at_driver_profiles').select('user_id,display_name,license_class,license_verified,availability').eq('organization_id',organizationId).eq('user_id',userId).maybeSingle());
