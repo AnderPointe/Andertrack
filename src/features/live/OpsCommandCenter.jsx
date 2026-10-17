@@ -16,12 +16,14 @@ import AssignmentActions from './AssignmentActions.jsx';
 import DeliveryWorkflow from './DeliveryWorkflow.jsx';
 import ShipmentJourney from './ShipmentJourney.jsx';
 import FleetIntelligence from './FleetIntelligence.jsx';
+import DispatchPlanner from './DispatchPlanner.jsx';
 
 const NAV = [
   { id: 'overview', label: 'Overview', icon: LayoutDashboard },
   { id: 'tracking', label: 'Live tracking', icon: MapPinned },
   { id: 'intelligent-fleet', label: 'Fleet intelligence', icon: Radio },
   { id: 'dispatch', label: 'Dispatch center', icon: Route },
+  { id: 'dispatch-planner', label: 'Dispatch optimization', icon: Sparkles },
   { id: 'journeys', label: 'Shipment journeys', icon: History },
   { id: 'intelligence', label: 'Smart Operations', icon: Sparkles },
   { id: 'fleet', label: 'Drivers & fleet', icon: Truck },
@@ -310,6 +312,7 @@ export default function OpsCommandCenter({
               view==='tracking'?'Real-time fleet visibility, location history and live operational context.':
               view==='intelligent-fleet'?'Replay recorded GPS traces, review telemetry quality and inspect local monitoring zones.':
               view==='dispatch'?'Manage the waiting line, plan assignments and follow every load.':
+              view==='dispatch-planner'?'Screen eligible driver and equipment matches while preserving FIFO priority.':
               view==='journeys'?'Trace recorded load transitions, package scans and private delivery confirmation.':
               view==='fleet'?'Verified people and ready equipment, side by side.':
               view==='analytics'?'Operational trends based on actual records, never estimated activity.':
@@ -378,6 +381,12 @@ export default function OpsCommandCenter({
               </button>):<div className="at-empty-list"><Radio size={24}/><strong>No GPS records available</strong><span>Location markers are displayed only for authorized, reported positions.</span></div>}
             </div>
           </>}
+          {view==='dispatch-planner'&&<DispatchPlanner
+            key={organizationId+':'+userId+':'+(isDemo?'demo':'live')}
+            assignments={ordered} drivers={drivers} vehicles={vehicles} locations={locations}
+            requests={dispatchRequests} organizationId={organizationId} role={role} isDemo={isDemo}
+            onOpenDispatch={()=>open('dispatch')}
+            onReviewLoad={id=>{setSelectedId(id);setQuery('');setFilter('all');open('dispatch');}}/>}
           {view==='dispatch'&&<div className="at-dispatch-grid">
             <div>{isDemo?<section className="at-surface"><CardHeading eyebrow="QUEUE / DEMONSTRATION" title="First-in first-out"/>
               <p className="at-subtext">Phase 5 processes queue requests in database order. Connect authorized driver accounts to test the live queue.</p>
