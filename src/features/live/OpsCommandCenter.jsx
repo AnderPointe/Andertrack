@@ -18,13 +18,17 @@ import ShipmentJourney from './ShipmentJourney.jsx';
 import FleetIntelligence from './FleetIntelligence.jsx';
 import DispatchPlanner from './DispatchPlanner.jsx';
 import DriverCockpit from './DriverCockpit.jsx';
+import FleetHealthDashboard from './FleetHealthDashboard.jsx';
+import DispatchModeDashboard from './DispatchModeDashboard.jsx';
 
 const NAV = [
   { id: 'overview', label: 'Overview', icon: LayoutDashboard },
   { id: 'tracking', label: 'Live tracking', icon: MapPinned },
   { id: 'intelligent-fleet', label: 'Fleet intelligence', icon: Radio },
+  { id: 'fleet-health', label: 'Fleet Health', icon: HeartPulse },
   { id: 'driver-cockpit', label: 'Driver Cockpit & HOS', icon: HeartPulse },
   { id: 'dispatch', label: 'Dispatch center', icon: Route },
+  { id: 'dispatch-mode', label: 'Dispatch Mode', icon: MapPinned },
   { id: 'dispatch-planner', label: 'Dispatch optimization', icon: Sparkles },
   { id: 'journeys', label: 'Shipment journeys', icon: History },
   { id: 'intelligence', label: 'Smart Operations', icon: Sparkles },
@@ -315,6 +319,8 @@ export default function OpsCommandCenter({
               view==='driver-cockpit'?'Authorized driver delivery controls and transparent ELD, payroll and telemetry integration readiness.':
               view==='intelligent-fleet'?'Replay recorded GPS traces, review telemetry quality and inspect local monitoring zones.':
               view==='dispatch'?'Manage the waiting line, plan assignments and follow every load.':
+              view==='dispatch-mode'?'Track selected shipments, review fleet positions and dispatch communication readiness.':
+              view==='fleet-health'?'Operational vehicle readiness, GPS reporting and maintenance integration status.':
               view==='dispatch-planner'?'Screen eligible driver and equipment matches while preserving FIFO priority.':
               view==='journeys'?'Trace recorded load transitions, package scans and private delivery confirmation.':
               view==='fleet'?'Verified people and ready equipment, side by side.':
@@ -408,6 +414,17 @@ export default function OpsCommandCenter({
             <ShipmentDetail active={selected} driver={currentDriver} role={role} organizationId={organizationId}
               currentUserId={userId} profile={profile} drivers={drivers} vehicles={vehicles} reload={reload} isDemo={isDemo}/>
           </div>}
+          {view==='fleet-health'&&<FleetHealthDashboard
+            key={organizationId+':'+userId+':'+(isDemo?'demo':'live')}
+            vehicles={vehicles} drivers={drivers} assignments={ordered} locations={locations}
+            now={clock} role={role} isDemo={isDemo}
+            onViewFleet={()=>open('fleet')} onViewTracking={()=>open('tracking')}/>}
+          {view==='dispatch-mode'&&<DispatchModeDashboard
+            key={organizationId+':'+userId+':'+(isDemo?'demo':'live')}
+            assignments={ordered} drivers={drivers} vehicles={vehicles} locations={locations}
+            role={role} isDemo={isDemo} organizationId={organizationId}
+            onReviewLoad={id=>{setSelectedId(id);setQuery('');setFilter('all');open('dispatch');}}
+            onOpenQueue={()=>open('dispatch')} onOpenFleet={()=>open('fleet')}/>}
           {view==='intelligent-fleet'&&<FleetIntelligence key={organizationId+':'+userId+':'+(isDemo?'demo':'live')}
             locations={locations} role={role} organizationId={organizationId} currentUserId={userId}
             isDemo={isDemo}/>}

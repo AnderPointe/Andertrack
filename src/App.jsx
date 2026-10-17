@@ -27,11 +27,11 @@ const demoVehicles=[
   {id:'v5',unit_number:'VAN-095',vehicle_type:'cargo_van',required_license_class:'C',payload_capacity_lbs:2300,enabled:true},
 ];
 const demoLocations=[
-  {id:'loc1',latitude:32.748,longitude:-97.337,status:'in_transit',unit_number:'TX-2048',last_ping_at:new Date(now-90000).toISOString()},
-  {id:'loc2',latitude:32.555,longitude:-97.321,status:'available',unit_number:'VAN-071',last_ping_at:new Date(now-180000).toISOString()},
-  {id:'loc3',latitude:31.997,longitude:-102.079,status:'loaded',unit_number:'BOX-116',last_ping_at:new Date(now-650000).toISOString()},
-  {id:'loc4',latitude:32.475,longitude:-99.733,status:'off_duty',unit_number:'HOT-042',last_ping_at:new Date(now-2400000).toISOString()},
-  {id:'loc5',driver_id:'d5',latitude:32.781,longitude:-96.798,status:'available',unit_number:'VAN-095',last_ping_at:new Date(now-45000).toISOString()},
+  {id:'loc1',driver_id:'d1',vehicle_id:'v1',latitude:32.748,longitude:-97.337,status:'in_transit',unit_number:'TX-2048',last_ping_at:new Date(now-90000).toISOString()},
+  {id:'loc2',driver_id:'d2',vehicle_id:'v2',latitude:32.555,longitude:-97.321,status:'available',unit_number:'VAN-071',last_ping_at:new Date(now-180000).toISOString()},
+  {id:'loc3',driver_id:'d3',vehicle_id:'v3',latitude:31.997,longitude:-102.079,status:'loaded',unit_number:'BOX-116',last_ping_at:new Date(now-650000).toISOString()},
+  {id:'loc4',driver_id:'d4',vehicle_id:'v4',latitude:32.475,longitude:-99.733,status:'off_duty',unit_number:'HOT-042',last_ping_at:new Date(now-2400000).toISOString()},
+  {id:'loc5',driver_id:'d5',vehicle_id:'v5',latitude:32.781,longitude:-96.798,status:'available',unit_number:'VAN-095',last_ping_at:new Date(now-45000).toISOString()},
 ];
 export default function App({onReturn=()=>{}}) {
   return <OpsCommandCenter isDemo
