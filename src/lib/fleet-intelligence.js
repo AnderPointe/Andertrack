@@ -77,7 +77,7 @@ export function fleetObservations(locations=[],fence=null,now=Date.now()) {
     const speed=l.speed_mph==null?null:Number(l.speed_mph);
     if(speed!=null && Number.isFinite(speed) && speed>80){
       issues.push({id:'speed:'+id,kind:'speed',severity:'medium',
-        title:'Reported speed above review threshold',detail:unit+' reported '+Math.round(speed)+' mph. Verify context; not a speeding determination.'});
+        title:'Reported speed above review threshold',detail:unit+' reported '+Math.round(speed)+' mph. Review context; this is not a speeding determination.'});
     }
     if(fence&&fencePosition(l,fence)==='outside'){
       issues.push({id:'fence:'+id,kind:'fence',severity:'high',
