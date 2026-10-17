@@ -8,6 +8,7 @@ Extends the already-deployed Driver Cockpit & HOS, without replacing the live da
 - **Earnings Studio:** scenario sliders for extra stops, per-stop rate, tips and detention minutes. Shows an itemized comparison of original *illustrative* earnings and hypothetical added earnings with proportional mini bars. No payroll entry is created.
 - **Cash-Out Sandbox:** two-stage confirmation to practice review/confirm and cancellation. Displays a final "simulated — not paid" status. No payout, balance change, bank API or ledger.
 - **IFTA Reconciliation Lab:** edit sample state mileage and compare totals to a sample trip/day distance, highlighting mismatch and allowing reset. Not a certified mileage/fuel tax report.
+- **Live Driver Mission Control:** signed-in drivers now also have an *actual-data* summary of own shipment count, active loads, pending offers and completed loads; the currently selected assignment's recorded status determines the next authorized-workflow guidance and a scheduled-delivery deadline indicator. This feature does not use fabricated GPS, predicted ETA or compliance inferences. 
 - **ePOD Mission Lab:** local checklist and sample recipient input must be completed before sample delivery button becomes available. A simulated stop credit only affects the screen's example wallet. Real ePOD still requires authorized driver proof and protected Supabase RPC; no fake proof is stored.
 
 ## Security and fairness constraints
