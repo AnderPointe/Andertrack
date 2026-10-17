@@ -54,3 +54,11 @@ export function cinemaDiagnostics(snapshot,source) {
     {id:'eld',label:'ELD / HOS engine',value:'NOT CONNECTED'},
   ];
 }
+
+/** Permission-aware cockpit entry: real positions only for authenticated drivers.
+ * Admin/dispatcher can preview a separate explicitly synthetic cockpit. */
+export function cockpitCinemaAccess({isDemo=false,role=''}={}) {
+  const liveDriver=!isDemo&&role==='driver';
+  const sampleOnly=Boolean(isDemo||role==='admin'||role==='dispatcher');
+  return {visible:liveDriver||sampleOnly,liveDriver,sampleOnly};
+}

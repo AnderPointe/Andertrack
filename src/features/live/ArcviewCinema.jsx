@@ -281,8 +281,8 @@ export default function ArcviewCinema({
     (nativeFullscreen?' at-cinema-native':'')+(effects?' at-cinema-effects':' at-cinema-still')}>
     {!open&&<button type="button" className="at-cinema-launch" onClick={launch}>
       <span className="at-cinema-launch-symbol"><ScanLine size={22}/></span>
-      <span><strong>ENTER CINEMATIC COCKPIT</strong>
-        <small>Full-screen holographic map · systems diagnostics · voice-ready console</small></span>
+      <span><strong>ENTER CINEMATIC COCKPIT{isDemo?' · SAMPLE':''}</strong>
+        <small>{isDemo?'Clearly labeled simulation · ':''}Full-screen holographic map · diagnostics · voice-ready controls</small></span>
       <Expand size={19}/>
     </button>}
     {open&&<div className="at-cinema-surface" role="dialog" aria-modal="true"

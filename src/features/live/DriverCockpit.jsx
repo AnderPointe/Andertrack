@@ -9,6 +9,7 @@ import DeliveryWorkflow from './DeliveryWorkflow.jsx';
 import FleetMap from './FleetMap.jsx';
 import HolographicHud from './HolographicHud.jsx';
 import ArcviewCinema from './ArcviewCinema.jsx';
+import { cockpitCinemaAccess } from '../../lib/arcview-cinema.js';
 import { validGpsPosition, freshGpsPosition } from '../../lib/operations.js';
 import {
   DEMO_PEOPLE,DUTY_STATES,safeDutyLog,setDemoDutySlot,formatHrsMinutes,
@@ -72,11 +73,12 @@ export default function DriverCockpit({
   const [selectedLoadId,setSelectedLoadId]=useState('');
   const person=DEMO_PEOPLE.find(p=>p.id===demoId)||DEMO_PEOPLE[0];
   const isDriver=role==='driver';
+  const cinemaAccess=cockpitCinemaAccess({isDemo,role});
   const liveAssignments=useMemo(()=>visibleDriverAssignments(assignments,role,currentUserId),
     [assignments,role,currentUserId]);
   const shipment=liveAssignments.find(a=>a.id===selectedLoadId)||liveAssignments.find(a=>a.status!=='delivered')||liveAssignments[0]||null;
   const demoCoords=DEMO_COORDS[person.id];
-  const sampleLocation=isDemo?{
+  const sampleLocation=cinemaAccess.sampleOnly?{
     id:person.id,driver_id:person.id,unit_number:person.unit,...demoCoords,status:person.status,
     speed_mph:38,heading:90,last_ping_at:new Date().toISOString(),
   }:null;
@@ -89,6 +91,12 @@ export default function DriverCockpit({
   }:null),[person,driveUsedMinutes]);
   const slots=useMemo(()=>setDemoDutySlot(person.log,dutyStatus,95),[person,dutyStatus]);
   const liveMode=!isDemo;
+  const cinemaSampleAssignment=cinemaAccess.sampleOnly?{
+    reference:person.reference,division:person.division,customer_name:person.customer,
+    pickup_address:'Sample pickup location — Fort Worth, TX',
+    dropoff_address:person.address,commodity:'Illustrative delivery',
+    status:'in_transit',driver_user_id:person.id,id:person.id,
+  }:null;
   const detail=isDemo?{
     reference:person.reference,division:person.division,customer_name:person.customer,
     dropoff_address:person.address,status:'in_transit',driver_user_id:person.id,id:person.id,
@@ -120,6 +128,15 @@ export default function DriverCockpit({
       </label>}
     </section>
 
+    {cinemaAccess.visible&&<ArcviewCinema
+      key={cinemaAccess.sampleOnly ? 'cinema-sample:'+person.id : 'cinema-driver:'+currentUserId}
+      isDemo={cinemaAccess.sampleOnly}
+      person={cinemaAccess.sampleOnly?person:null}
+      dutyStatus={cinemaAccess.sampleOnly?dutyStatus:null}
+      location={cinemaAccess.sampleOnly?sampleLocation:reportedGps}
+      assignment={cinemaAccess.sampleOnly?cinemaSampleAssignment:shipment}
+      locked={false}/>}
+
     {isDemo?<div className="at-cockpit-banner"><ShieldAlert size={16}/>
       SIMULATED DATA · Every dollar, HOS clock, ECG, IFTA mile and GPS position on this screen is fictitious. No payment or legal record is created.
     </div>:<div className="at-cockpit-banner live"><ShieldCheck size={16}/>
@@ -142,12 +159,6 @@ export default function DriverCockpit({
     </div>
 
     <HolographicHud key={isDemo ? 'sample-hud:'+person.id : 'driver-hud:'+currentUserId}
-      isDemo={isDemo} person={isDemo?person:null} dutyStatus={isDemo?dutyStatus:null}
-      location={isDemo ? sampleLocation : isDriver ? reportedGps : null}
-      assignment={isDemo ? detail : isDriver ? shipment : null}
-      locked={!isDemo&&!isDriver}/>
-
-    <ArcviewCinema key={isDemo ? 'cinema-demo:'+person.id : 'cinema-driver:'+currentUserId}
       isDemo={isDemo} person={isDemo?person:null} dutyStatus={isDemo?dutyStatus:null}
       location={isDemo ? sampleLocation : isDriver ? reportedGps : null}
       assignment={isDemo ? detail : isDriver ? shipment : null}
