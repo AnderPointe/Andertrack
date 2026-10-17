@@ -224,7 +224,7 @@ export default function OpsCommandCenter({
           <div><strong>Operations network</strong><small>{isDemo?'Sample data · offline':sync}</small></div>
           <span className={'at-connection-light '+(sync==='Realtime connected'?'connected':'')}/></div>
         <button className="at-nav-item at-help" onClick={()=>open('settings')}><CircleHelp size={18}/><span>Help & security</span></button>
-        <div className="at-side-footer">ANDE﻿RTRACK OS <span>•</span> V2 DESIGN</div>
+        <div className="at-side-footer">ANDERTRACK OS <span>•</span> V2 DESIGN</div>
       </div>
     </aside>
     {mobileMenu&&<button className="at-mobile-overlay" onClick={()=>setMobileMenu(false)} aria-label="Close navigation"/>}
@@ -245,7 +245,7 @@ export default function OpsCommandCenter({
       </header>
       <main className="at-content">
         <section className="at-page-heading">
-          <div><div className="at-eyebrow"><span className="at-eyebrow-bar"/>ANDE﻿RTRACK / {isDemo?'INTERACTIVE DEMO':'SECURE OPERATIONS'}</div>
+          <div><div className="at-eyebrow"><span className="at-eyebrow-bar"/>ANDERTRACK / {isDemo?'INTERACTIVE DEMO':'SECURE OPERATIONS'}</div>
             <h1>{view==='overview'?'Operations at a glance':NAV.find(n=>n.id===view)?.label}</h1>
             <p>{view==='overview'?'Everything moving, everyone connected. One command center.':
               view==='tracking'?'Real-time fleet visibility, location history and live operational context.':
