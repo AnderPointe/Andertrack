@@ -13,6 +13,10 @@ import {
   demoHosGauges,moneyTotal,visibleDriverAssignments,cockpitRouteUrl,
 } from '../../lib/driver-cockpit.js';
 import './driver-cockpit.css';
+import {
+  DutyScenarioLab, EarningsScenarioStudio, PayoutSandbox,
+  JurisdictionReconciliationLab, StopVerificationLab, LiveDriverMission,
+} from './DriverCockpitPro.jsx';
 
 const fmtCash=value=>new Intl.NumberFormat('en-US',{style:'currency',currency:'USD'}).format(value||0);
 const pretty=value=>String(value||'Unknown').replaceAll('_',' ').replace(/\b\w/g,c=>c.toUpperCase());
@@ -62,7 +66,7 @@ export default function DriverCockpit({
   const [dutyStatus,setDutyStatus]=useState(DEMO_PEOPLE[0].status);
   const [driveUsedMinutes,setDriveUsedMinutes]=useState(DEMO_PEOPLE[0].hos.driveUsedMinutes);
   const [simulateDrop,setSimulateDrop]=useState(false);
-  const [cashOutDemo,setCashOutDemo]=useState(false);
+  const [proofReady,setProofReady]=useState(false);
   const [selectedLoadId,setSelectedLoadId]=useState('');
   const person=DEMO_PEOPLE.find(p=>p.id===demoId)||DEMO_PEOPLE[0];
   const isDriver=role==='driver';
@@ -93,7 +97,7 @@ export default function DriverCockpit({
   useEffect(()=>{
     setDutyStatus(person.status);
     setDriveUsedMinutes(person.hos?.driveUsedMinutes||0);
-    setSimulateDrop(false);setCashOutDemo(false);
+    setSimulateDrop(false);setProofReady(false);
   },[person.id]);
 
   return <div className="at-cockpit">
@@ -135,6 +139,9 @@ export default function DriverCockpit({
         'ELD NOT CONNECTED'}</span>
     </div>
 
+    {!isDemo&&isDriver&&<LiveDriverMission assignments={liveAssignments}
+      activeAssignment={shipment} profile={profile}/>}
+
     <div className="at-cockpit-two-col">
       <section className="at-surface at-cockpit-panel">
         <div className="at-cockpit-panel-header">
@@ -160,7 +167,9 @@ export default function DriverCockpit({
         </>:<div className="at-cockpit-unconnected"><CalendarClock size={19}/>
           <div><strong>Local driver shift illustration</strong><p>FMCSA HOS applicability varies by vehicle and operation. No HOS compliance determination is made for this example.</p></div>
         </div>}
-        <DutyGrid slots={slots}/></>:<div className="at-cockpit-unconnected"><Clock3 size={23}/>
+        <DutyGrid slots={slots}/>
+        <DutyScenarioLab key={person.id} person={person} baseSlots={slots}/>
+        </>:<div className="at-cockpit-unconnected"><Clock3 size={23}/>
           <div><strong>No certified ELD integration connected</strong><p>Real clocks and status changes are intentionally unavailable. Connect a supported certified ELD and sync authenticated driving, duty and cycle events before enabling controls.</p></div>
         </div>}
       </section>
@@ -200,12 +209,9 @@ export default function DriverCockpit({
           {Object.entries(itemizedEarnings).map(([key,value])=><div key={key}>
             <span>{EARNINGS_LABELS[key]}</span><strong>{fmtCash(value)}</strong>
           </div>)}
-        </div><button className="at-cockpit-action" type="button" onClick={()=>setCashOutDemo(true)}>
-          <Banknote size={17}/> Simulate instant cash out <ArrowRight size={15}/>
-        </button>
-        {cashOutDemo&&<div className="at-cockpit-demo-notice" role="status">
-          <CheckCircle2 size={16}/> Simulation complete. No bank connection, withdrawal, balance transfer or payout occurred.
-        </div>}</>:<div className="at-cockpit-unconnected"><Wallet size={22}/><div>
+        </div>
+        <EarningsScenarioStudio key={person.id} earnings={itemizedEarnings}/>
+        <PayoutSandbox key={'payout:'+person.id} balance={demoEarnings}/></>:<div className="at-cockpit-unconnected"><Wallet size={22}/><div>
           <strong>No verified driver payment ledger</strong><p>Shift earnings, tips, detention and bonuses require an authorized payroll source. Instant cash-out is disabled until identity verification, provider integration and payout controls are implemented.</p></div></div>}
       </section>
       <section className="at-surface at-cockpit-panel">
@@ -226,6 +232,7 @@ export default function DriverCockpit({
             <strong>{state}</strong><span className="at-cockpit-progress"><span style={{width:Math.min(100,miles/person.mileage.today*100)+'%'}}/></span><small>{miles} mi</small>
           </div>)}
         </div><p className="at-cockpit-note">Example state mileage is not an IFTA-compliant report. Verified trip distances, jurisdictions, taxable miles, fuel records and audit trails are not connected.</p>
+        <JurisdictionReconciliationLab key={person.id} mileage={person.mileage}/>
         </>:<div className="at-cockpit-unconnected"><Route size={23}/><div>
           <strong>IFTA / odometer data not available</strong>
           <p>Current GPS positions alone cannot support state-by-state taxable mileage. Connect a validated odometer and jurisdiction trip ledger before reporting or filing.</p></div></div>}
@@ -261,9 +268,11 @@ export default function DriverCockpit({
           <span className="at-kicker">{person.reference}</span><h4>{person.customer}</h4>
           <p>{person.stop}</p><div><MapPinned size={16}/>{person.address}</div>
           <small>{person.instructions}</small></div>
-          <button className="at-cockpit-action" type="button" onClick={()=>setSimulateDrop(true)}
-            disabled={simulateDrop}><PackageCheck size={17}/>
-            {simulateDrop?'Simulated stop complete':'Simulate drop & stop credit'} <ArrowRight size={15}/></button>
+          <StopVerificationLab key={person.id} person={person} completed={simulateDrop}
+            onReadinessChange={setProofReady}/>
+          <button className="at-cockpit-action" type="button" onClick={()=>{if(proofReady)setSimulateDrop(true);}}
+            disabled={simulateDrop || !proofReady}><PackageCheck size={17}/>
+            {simulateDrop?'Simulated stop complete':proofReady?'Simulate verified handoff (+$15)':'Finish demo handoff checklist'} <ArrowRight size={15}/></button>
           {simulateDrop&&<div className="at-cockpit-demo-notice" role="status"><CheckCircle2 size={16}/>
             Sample stop +$15 applied to the on-screen demo only. No shipment, money, customer proof or backend record was changed.
           </div>}
