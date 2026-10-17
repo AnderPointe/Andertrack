@@ -126,7 +126,7 @@ export default function LiveWorkspace({ onDemo }) {
       supabase.from('at_dispatch_requests').select('id,queue_number,driver_user_id,requested_at,status').eq('organization_id',organizationId).eq('status','queued').order('queue_number',{ascending:true}).limit(200)
     ];
     if (!isPlanner) requests.push(supabase.from('at_driver_profiles').select('user_id,display_name,license_class,license_verified,availability').eq('organization_id',organizationId).eq('user_id',userId).maybeSingle());
-    else requests.push(supabase.from('driver_location_current').select('id,driver_id,latitude,longitude,status,unit_number,last_ping_at').eq('company_id',organizationId).limit(250));
+    else requests.push(supabase.from('driver_location_current').select('id,driver_id,latitude,longitude,heading,speed_mph,accuracy_meters,status,unit_number,vehicle_type,battery_percent,signal_strength,last_ping_at').eq('company_id',organizationId).limit(250));
     const results = await Promise.all(requests);
     if (scopeRef.current !== requestedScope || generation !== reloadGeneration.current) return;
     const critical = results.slice(0, isPlanner ? 4 : 5);
