@@ -3,7 +3,7 @@ import {
   Activity, ArrowDownRight, ArrowRight, ArrowUpRight, BarChart3, Bell, CheckCircle2,
   ChevronRight, CircleHelp, Clock3, Command, Database, Filter, LayoutDashboard, LockKeyhole,
   LogOut, MapPinned, Menu, Moon, Package, Radio, RefreshCw, Route, Search, Settings2,
-  ShieldCheck, Sun, Truck, Users, Wifi, X, Zap, Sparkles, Download, Keyboard,
+  ShieldCheck, Sun, Truck, Users, Wifi, X, Zap, Sparkles, Download, Keyboard, History,
 } from 'lucide-react';
 import FleetMap from './FleetMap.jsx';
 import { ACTIVE_STATUSES, freshGpsPosition, visibleShipments, selectedVisibleShipment } from '../../lib/operations.js';
@@ -14,11 +14,13 @@ import './command-center.css';
 import DispatchRequestQueue from './DispatchRequestQueue.jsx';
 import AssignmentActions from './AssignmentActions.jsx';
 import DeliveryWorkflow from './DeliveryWorkflow.jsx';
+import ShipmentJourney from './ShipmentJourney.jsx';
 
 const NAV = [
   { id: 'overview', label: 'Overview', icon: LayoutDashboard },
   { id: 'tracking', label: 'Live tracking', icon: MapPinned },
   { id: 'dispatch', label: 'Dispatch center', icon: Route },
+  { id: 'journeys', label: 'Shipment journeys', icon: History },
   { id: 'intelligence', label: 'Smart Operations', icon: Sparkles },
   { id: 'fleet', label: 'Drivers & fleet', icon: Truck },
   { id: 'analytics', label: 'Analytics', icon: BarChart3 },
@@ -99,7 +101,11 @@ function ShipmentDetail({ active, driver, organizationId, role, currentUserId, p
         <DeliveryWorkflow key={organizationId + ':' + active.id} assignment={active}
           organizationId={organizationId} currentUserId={currentUserId}
           role={role} profile={profile} onChanged={reload}/>
-      </> : <DeliveryWorkflow isDemo assignment={active} organizationId="demo-only" currentUserId="demo-only" role="admin" profile={null}/>}
+        <ShipmentJourney key={'journey:' + organizationId + ':' + currentUserId + ':' + active.id}
+          assignment={active} organizationId={organizationId}
+          currentUserId={currentUserId} role={role} compact/>
+      </> : <><DeliveryWorkflow isDemo assignment={active} organizationId="demo-only" currentUserId="demo-only" role="admin" profile={null}/>
+        <ShipmentJourney isDemo assignment={active} organizationId="demo-only" currentUserId="demo-only" role="admin" compact/></>}
     </>}
   </section>;
 }
@@ -301,6 +307,7 @@ export default function OpsCommandCenter({
             <p>{view==='overview'?'Everything moving, everyone connected. One command center.':
               view==='tracking'?'Real-time fleet visibility, location history and live operational context.':
               view==='dispatch'?'Manage the waiting line, plan assignments and follow every load.':
+              view==='journeys'?'Trace recorded load transitions, package scans and private delivery confirmation.':
               view==='fleet'?'Verified people and ready equipment, side by side.':
               view==='analytics'?'Operational trends based on actual records, never estimated activity.':
               view==='intelligence'?'Live operational signals, quick triage and verifiable recent activity.':
@@ -380,6 +387,15 @@ export default function OpsCommandCenter({
             </div>
             <ShipmentDetail active={selected} driver={currentDriver} role={role} organizationId={organizationId}
               currentUserId={userId} profile={profile} drivers={drivers} vehicles={vehicles} reload={reload} isDemo={isDemo}/>
+          </div>}
+          {view==='journeys'&&<div className="at-journey-page">
+            <ShipmentPanel assignments={ordered} selected={selected} onSelect={setSelectedId} filter={filter}
+              setFilter={setFilter} query={query} onExport={exportShipments}/>
+            {selected ? <ShipmentJourney key={'control:' + organizationId + ':' + userId + ':' + selected.id}
+              assignment={selected} organizationId={organizationId} currentUserId={userId}
+              role={role} isDemo={isDemo}/> : <section className="at-surface at-empty-list">
+                <Package size={26}/><strong>Select a shipment</strong><span>Choose a visible load to inspect its recorded lifecycle.</span>
+              </section>}
           </div>}
           {view==='fleet'&&<FleetPanel drivers={drivers} vehicles={vehicles} locations={locations}/>}
           {view==='analytics'&&<>
