@@ -298,7 +298,7 @@ export function LiveDriverMission({assignments=[],activeAssignment=null,profile=
     <div className="at-pro-live-timeline" role="list" aria-label="Current shipment status milestones">
       {stages.map((status,index)=><div key={status}
         role="listitem" className={index===activeIndex?'current':index<activeIndex?'earlier':'future'}>
-        <i/ ><span>{status.replaceAll('_',' ')}</span></div>)}
+        <i/><span>{status.replaceAll('_',' ')}</span></div>)}
     </div>
     <div className={'at-pro-deadline at-pro-'+decision.scheduleKind}>
       <CalendarClock size={17}/><div><strong>{decision.scheduleKind==='past-due'?
