@@ -20,9 +20,13 @@ import DispatchPlanner from './DispatchPlanner.jsx';
 import DriverCockpit from './DriverCockpit.jsx';
 import FleetHealthDashboard from './FleetHealthDashboard.jsx';
 import DispatchModeDashboard from './DispatchModeDashboard.jsx';
+import {WarehouseOperationsDashboard,DeliveryOverviewDashboard} from './ModernOperationsDashboards.jsx';
+import DriverVehicleProfiles from './DriverVehicleProfiles.jsx';
 
 const NAV = [
   { id: 'overview', label: 'Overview', icon: LayoutDashboard },
+  { id: 'delivery-overview', label: 'Delivery Overview', icon: Package },
+  { id: 'warehouse', label: 'Warehouse Operations', icon: Truck },
   { id: 'tracking', label: 'Live tracking', icon: MapPinned },
   { id: 'intelligent-fleet', label: 'Fleet intelligence', icon: Radio },
   { id: 'fleet-health', label: 'Fleet Health', icon: HeartPulse },
@@ -316,6 +320,8 @@ export default function OpsCommandCenter({
             <h1>{view==='overview'?'Operations at a glance':NAV.find(n=>n.id===view)?.label}</h1>
             <p>{view==='overview'?'Everything moving, everyone connected. One command center.':
               view==='tracking'?'Real-time fleet visibility, location history and live operational context.':
+              view==='warehouse'?'A bright equipment staging and warehouse operations view, linked to real shipment records.':
+              view==='delivery-overview'?'A modern overview of completed shipments, delivery activity and vehicle selection.':
               view==='driver-cockpit'?'Authorized driver delivery controls and transparent ELD, payroll and telemetry integration readiness.':
               view==='intelligent-fleet'?'Replay recorded GPS traces, review telemetry quality and inspect local monitoring zones.':
               view==='dispatch'?'Manage the waiting line, plan assignments and follow every load.':
@@ -414,17 +420,30 @@ export default function OpsCommandCenter({
             <ShipmentDetail active={selected} driver={currentDriver} role={role} organizationId={organizationId}
               currentUserId={userId} profile={profile} drivers={drivers} vehicles={vehicles} reload={reload} isDemo={isDemo}/>
           </div>}
+          {view==='warehouse'&&<WarehouseOperationsDashboard
+            key={organizationId+':'+userId+':'+(isDemo?'demo':'live')}
+            vehicles={vehicles} drivers={drivers} assignments={ordered} isDemo={isDemo} role={role}
+            onOpenDispatch={()=>open('dispatch')} onOpenFleet={()=>open('fleet')}/>}
+          {view==='delivery-overview'&&<DeliveryOverviewDashboard
+            key={organizationId+':'+userId+':'+(isDemo?'demo':'live')}
+            assignments={ordered} vehicles={vehicles} drivers={drivers} isDemo={isDemo} role={role}
+            onOpenDispatch={()=>open('dispatch')} onOpenFleet={()=>open('fleet')}
+            onReviewLoad={id=>{setSelectedId(id);setQuery('');setFilter('all');open('dispatch');}}/>}
           {view==='fleet-health'&&<FleetHealthDashboard
             key={organizationId+':'+userId+':'+(isDemo?'demo':'live')}
             vehicles={vehicles} drivers={drivers} assignments={ordered} locations={locations}
             now={clock} role={role} isDemo={isDemo}
             onViewFleet={()=>open('fleet')} onViewTracking={()=>open('tracking')}/>}
-          {view==='dispatch-mode'&&<DispatchModeDashboard
-            key={organizationId+':'+userId+':'+(isDemo?'demo':'live')}
-            assignments={ordered} drivers={drivers} vehicles={vehicles} locations={locations}
-            role={role} isDemo={isDemo} organizationId={organizationId}
-            onReviewLoad={id=>{setSelectedId(id);setQuery('');setFilter('all');open('dispatch');}}
-            onOpenQueue={()=>open('dispatch')} onOpenFleet={()=>open('fleet')}/>}
+          {view==='dispatch-mode'&&<>
+            <DispatchModeDashboard
+              key={organizationId+':'+userId+':'+(isDemo?'demo':'live')}
+              assignments={ordered} drivers={drivers} vehicles={vehicles} locations={locations}
+              role={role} isDemo={isDemo} organizationId={organizationId}
+              onReviewLoad={id=>{setSelectedId(id);setQuery('');setFilter('all');open('dispatch');}}
+              onOpenQueue={()=>open('dispatch')} onOpenFleet={()=>open('fleet')}/>
+            {(planner||isDemo)&&<DriverVehicleProfiles
+              drivers={drivers} vehicles={vehicles} assignments={ordered} isDemo={isDemo}/>}
+          </>}
           {view==='intelligent-fleet'&&<FleetIntelligence key={organizationId+':'+userId+':'+(isDemo?'demo':'live')}
             locations={locations} role={role} organizationId={organizationId} currentUserId={userId}
             isDemo={isDemo}/>}
