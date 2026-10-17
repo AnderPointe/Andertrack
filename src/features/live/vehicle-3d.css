@@ -60,3 +60,9 @@
  .at-v3d-stage-label span{max-width:175px}
  .at-v3d-camera{left:7px;right:7px}}
 @media(prefers-reduced-motion:reduce){.at-v3d *{animation:none!important;transition:none!important}}
+
+/* Model concept selector: four real controls fit as two clean light-theme rows. */
+.at-v3d-bottom{grid-template-columns:repeat(2,minmax(0,1fr))}
+.at-v3d-bottom>label:last-child{align-self:center}
+.at-v3d-camera button:disabled{opacity:.43;cursor:not-allowed}
+@media(max-width:460px){.at-v3d-bottom{grid-template-columns:1fr}}
