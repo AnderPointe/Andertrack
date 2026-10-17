@@ -7,6 +7,7 @@ import {
 import AssignmentActions from './AssignmentActions.jsx';
 import DeliveryWorkflow from './DeliveryWorkflow.jsx';
 import FleetMap from './FleetMap.jsx';
+import HolographicHud from './HolographicHud.jsx';
 import { validGpsPosition, freshGpsPosition } from '../../lib/operations.js';
 import {
   DEMO_PEOPLE,DUTY_STATES,safeDutyLog,setDemoDutySlot,formatHrsMinutes,
@@ -138,6 +139,12 @@ export default function DriverCockpit({
       <span className="at-cockpit-current-duty">{isDemo?DUTY_STATES.find(s=>s.id===dutyStatus)?.label.toUpperCase():
         'ELD NOT CONNECTED'}</span>
     </div>
+
+    <HolographicHud key={isDemo ? 'sample-hud:'+person.id : 'driver-hud:'+currentUserId}
+      isDemo={isDemo} person={isDemo?person:null} dutyStatus={isDemo?dutyStatus:null}
+      location={isDemo ? sampleLocation : isDriver ? reportedGps : null}
+      assignment={isDemo ? detail : isDriver ? shipment : null}
+      locked={!isDemo&&!isDriver}/>
 
     {!isDemo&&isDriver&&<LiveDriverMission assignments={liveAssignments}
       activeAssignment={shipment} profile={profile}/>}
