@@ -50,7 +50,7 @@ test('observations are review cues, not violations; use recent GPS only',()=>{
    {id:'b',unit_number:'B',latitude:32.80,longitude:-97.30,speed_mph:90,last_ping_at:'2026-10-17T14:40:00Z'},
  ];
  const notes=fleetObservations(loc,{latitude:32.75,longitude:-97.33,radiusMiles:2},now);
- assert.ok(notes.some(x=>x.kind==='speed'&&x.detail.includes('review')));
+ assert.ok(notes.some(x=>x.kind==='speed'&&x.detail.toLowerCase().includes('review')));
  assert.ok(notes.some(x=>x.id==='stale:b'));
  assert.ok(!notes.some(x=>x.id==='speed:b'));
  assert.ok(!notes.some(x=>x.kind==='fence'&&x.id==='fence:b'));
