@@ -15,10 +15,12 @@ import DispatchRequestQueue from './DispatchRequestQueue.jsx';
 import AssignmentActions from './AssignmentActions.jsx';
 import DeliveryWorkflow from './DeliveryWorkflow.jsx';
 import ShipmentJourney from './ShipmentJourney.jsx';
+import FleetIntelligence from './FleetIntelligence.jsx';
 
 const NAV = [
   { id: 'overview', label: 'Overview', icon: LayoutDashboard },
   { id: 'tracking', label: 'Live tracking', icon: MapPinned },
+  { id: 'intelligent-fleet', label: 'Fleet intelligence', icon: Radio },
   { id: 'dispatch', label: 'Dispatch center', icon: Route },
   { id: 'journeys', label: 'Shipment journeys', icon: History },
   { id: 'intelligence', label: 'Smart Operations', icon: Sparkles },
@@ -306,6 +308,7 @@ export default function OpsCommandCenter({
             <h1>{view==='overview'?'Operations at a glance':NAV.find(n=>n.id===view)?.label}</h1>
             <p>{view==='overview'?'Everything moving, everyone connected. One command center.':
               view==='tracking'?'Real-time fleet visibility, location history and live operational context.':
+              view==='intelligent-fleet'?'Replay recorded GPS traces, review telemetry quality and inspect local monitoring zones.':
               view==='dispatch'?'Manage the waiting line, plan assignments and follow every load.':
               view==='journeys'?'Trace recorded load transitions, package scans and private delivery confirmation.':
               view==='fleet'?'Verified people and ready equipment, side by side.':
@@ -388,6 +391,9 @@ export default function OpsCommandCenter({
             <ShipmentDetail active={selected} driver={currentDriver} role={role} organizationId={organizationId}
               currentUserId={userId} profile={profile} drivers={drivers} vehicles={vehicles} reload={reload} isDemo={isDemo}/>
           </div>}
+          {view==='intelligent-fleet'&&<FleetIntelligence key={organizationId+':'+userId+':'+(isDemo?'demo':'live')}
+            locations={locations} role={role} organizationId={organizationId} currentUserId={userId}
+            isDemo={isDemo}/>}
           {view==='journeys'&&<div className="at-journey-page">
             <ShipmentPanel assignments={ordered} selected={selected} onSelect={setSelectedId} filter={filter}
               setFilter={setFilter} query={query} onExport={exportShipments}/>
