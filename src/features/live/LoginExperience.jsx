@@ -4,7 +4,7 @@ import './command-center.css';
 import './auth-experience.css';
 
 /** Authentication UI only; all session operations stay in LiveWorkspace. */
-export default function LoginExperience({ email, setEmail, sent, busy, error, onSubmit, onDemo }) {
+export default function LoginExperience({ email, setEmail, sent, busy, error, onSubmit, onDemo, onChangeEmail }) {
   const rateLimited = /rate limit|too many requests/i.test(error || '');
   const needsInvite = /signup|signups not allowed/i.test(error || '');
   return <div className="at-auth-screen">
@@ -44,7 +44,9 @@ export default function LoginExperience({ email, setEmail, sent, busy, error, on
         <div className="at-auth-form-top"><span><LockKeyhole size={19}/></span><div><strong>AUTHORIZED ACCESS</strong><small>ANDERTRACK OPERATIONS OS</small></div></div>
         <h2>Welcome back.</h2><p>Sign in to your operations workspace using your approved company email.</p>
         {sent ? <div className="at-auth-success" role="status"><CheckCircle2 size={22}/><div><strong>Check your inbox</strong>
-          <span>A secure sign-in link was requested. Use the newest email and return to this browser to complete authentication.</span></div></div> :
+          <span>A secure sign-in link was requested for {email}. Use the newest message and open it in this browser. If it does not arrive, check spam before retrying.</span>
+          <button type="button" className="at-auth-change-email" onClick={onChangeEmail}>Use a different email</button>
+          </div></div> :
         <form className="at-auth-form" onSubmit={onSubmit}>
           <label htmlFor="at-auth-email">Work email address</label>
           <input id="at-auth-email" type="email" value={email} onChange={e=>setEmail(e.target.value)} placeholder="you@company.com" required autoComplete="email"/>
