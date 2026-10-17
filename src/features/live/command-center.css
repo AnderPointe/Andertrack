@@ -304,3 +304,22 @@
 .at-alert-shortcut{position:relative}
 .at-notification-count{position:absolute;top:-5px;right:-5px;min-width:17px;height:17px;padding:1px 4px;border-radius:30px;
   background:var(--at-orange);color:#12191b;font-size:9px;font-weight:850;display:grid;place-items:center}
+
+
+/* Unified Phase 4 + Command Center GPS visual details. */
+.at-fleet-map .at-pin-core{background:var(--at-marker-color,var(--at-teal))!important}
+.at-map-summary{position:absolute;top:58px;left:16px;z-index:402;display:flex;align-items:center;flex-wrap:wrap;gap:7px;
+  background:#0b1720e8;border:1px solid #405963;border-radius:9px;padding:9px 11px;color:#e8f7f7;
+  font-size:10px;font-weight:720;box-shadow:0 6px 20px #0006;pointer-events:none}
+.at-map-summary>svg{color:#32d2c1}
+.at-map-summary-divider{color:#647a82}
+.at-map-summary-loading{color:#ffb14b}
+.at-map-error{position:absolute;top:108px;left:16px;right:16px;z-index:403;max-width:460px;
+  display:flex;align-items:flex-start;gap:9px;padding:10px 12px;border-radius:9px;
+  background:#412023e8;color:#ffcabf;border:1px solid #d56f64;font-size:11px;line-height:1.5;
+  overflow-wrap:anywhere}
+.at-map-error>svg{flex-shrink:0}
+@media(max-width:620px){
+  .at-map-summary{top:55px;left:10px;right:10px}
+  .at-map-error{top:106px;left:10px;right:10px}
+}
