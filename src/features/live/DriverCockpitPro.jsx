@@ -7,6 +7,7 @@ import {
 import {
   DEMO_CHECKLIST,dutySlotToTime,summarizeDutySlots,dutySegmentsFromSlots,
   paintDutyRange,payrollScenario,jurisdictionReconciliation,proofReadiness,dutyScenarioCsv,
+  nextDriverMissionStatus,liveDriverMissionCounts,
 } from '../../lib/driver-cockpit-pro.js';
 import { DUTY_STATES,formatHrsMinutes } from '../../lib/driver-cockpit.js';
 import './driver-cockpit-pro.css';
@@ -268,4 +269,46 @@ export function StopVerificationLab({person,completed,onReadinessChange}) {
       Real ePOD still requires the signed-in assigned driver, protected package scans,
       authenticated photo upload and a successful Supabase delivery-confirmation RPC.</p>
   </div>;
+}
+
+/** Actual authorized driver's assignments. Read-only intelligence; existing RPC handles state transitions. */
+export function LiveDriverMission({assignments=[],activeAssignment=null,profile=null}) {
+  const counts=liveDriverMissionCounts(assignments);
+  const decision=nextDriverMissionStatus(activeAssignment);
+  const scheduled=decision.scheduledDeliveryAt?
+    new Date(decision.scheduledDeliveryAt).toLocaleString():'Not scheduled';
+  const stages=['offered','accepted','at_pickup','picked_up','in_transit','delivered'];
+  const activeIndex=stages.indexOf(activeAssignment?.status);
+  return <section className="at-surface at-pro-live-mission" aria-label="Authorized driver mission control">
+    <div className="at-pro-head"><div><span>AUTHENTICATED DRIVER MISSION CONTROL</span>
+      <strong>My dispatch & delivery readiness</strong>
+      <small>Derived from your authorized shipment records, not a simulated trip or predicted ETA.</small>
+    </div><span className="at-pro-live-mark">LIVE ASSIGNMENTS</span></div>
+    <div className="at-pro-mission-metrics">
+      {[
+        ['My shipments',counts.total],['Active loads',counts.active],
+        ['Pending offers',counts.offers],['Delivered',counts.delivered],
+      ].map(([name,num])=><div key={name}><small>{name}</small><strong>{num}</strong></div>)}
+    </div>
+    {activeAssignment?<><div className="at-pro-live-action">
+      <div><small>Next recorded-workflow step</small>
+        <strong>{decision.label}</strong><p>{decision.instructions}</p>
+      </div><span>{activeAssignment.reference||'Assigned load'}</span>
+    </div>
+    <div className="at-pro-live-timeline" role="list" aria-label="Current shipment status milestones">
+      {stages.map((status,index)=><div key={status}
+        role="listitem" className={index===activeIndex?'current':index<activeIndex?'earlier':'future'}>
+        <i/ ><span>{status.replaceAll('_',' ')}</span></div>)}
+    </div>
+    <div className={'at-pro-deadline at-pro-'+decision.scheduleKind}>
+      <CalendarClock size={17}/><div><strong>{decision.scheduleKind==='past-due'?
+        'Scheduled delivery time has passed':decision.scheduleKind==='approaching'?
+        'Scheduled delivery within two hours':'Recorded delivery schedule'}</strong>
+      <small>{scheduled} · Actual arrival time and compliance are not predicted.</small></div>
+    </div>
+    </>:<div className="at-pro-live-action"><ShieldCheck size={20}/>
+      No shipment is currently selected. Your authorized offers and shipments will appear here when assigned.</div>}
+    <p className="at-pro-caution"><ShieldCheck size={14}/>
+      Only the signed-in driver's assignments are shown. Actual status changes and proofs must be completed through the server-authorized controls below; this panel never bypasses RLS.</p>
+  </section>;
 }
