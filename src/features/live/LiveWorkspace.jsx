@@ -4,6 +4,7 @@ import { supabase, supabaseConfigured } from '../../lib/supabase';
 import AssignmentActions from './AssignmentActions.jsx';
 import DispatchRequestQueue from './DispatchRequestQueue.jsx';
 import OpsCommandCenter from './OpsCommandCenter.jsx';
+import LoginExperience from './LoginExperience.jsx';
 
 function Label({ children, tone = '' }) {
   return <span className={`pill ${tone}`}>{children}</span>;
@@ -26,13 +27,7 @@ function Login({ onDemo }) {
     if (authError) setError(authError.message);
     else setSent(true);
   }
-  return <div className="live-shell"><div className="live-top"><div className="brand"><span className="brandicon"><Truck size={22}/></span><div><strong>ANDER<span>TRACK</span></strong><small>OPERATIONS / SECURE ACCESS</small></div></div><Label tone="info">Phase 2 pilot</Label></div><section className="live-login panel">
-    <LockKeyhole size={27} color="#55d8ca"/>
-    <h1>Sign in to Andertrack</h1>
-    <p className="muted">Dispatcher and driver access is assigned by your organization. Your role determines which workspace opens.</p>
-    {sent ? <div className="live-message"><CheckCircle2 size={19}/> Check your email for your sign-in link. Return to this browser to complete sign-in.</div> : <form onSubmit={submit} className="live-form"><label htmlFor="sign-in-email">Work email</label><input id="sign-in-email" type="email" required value={email} onChange={e => setEmail(e.target.value)} placeholder="you@company.com" autoComplete="email"/><button className="primary" disabled={busy}>{busy ? 'Sending link…' : 'Email me a sign-in link'} <ArrowRight size={17}/></button>{error && <p className="live-error" role="alert">{error}</p>}</form>}
-    <div className="live-separator">or</div><button className="secondary" onClick={onDemo}>Explore demo without logging in</button>
-  </section></div>;
+  return <LoginExperience email={email} setEmail={setEmail} sent={sent} busy={busy} error={error} onSubmit={submit} onDemo={onDemo}/>;
 }
 function Configuration({ onDemo }) {
   return <div className="live-shell"><section className="live-login panel"><Database size={28} color="#ffcc83"/><h1>Supabase connection not configured</h1><p className="muted">Add <code>VITE_SUPABASE_URL</code> and <code>VITE_SUPABASE_PUBLISHABLE_KEY</code> to your deployment environment and restart the build. Never place a database password or service-role key in the frontend.</p><button className="secondary" onClick={onDemo}>Open sample dashboard</button></section></div>;
