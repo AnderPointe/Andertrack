@@ -13,6 +13,7 @@ import './smart-operations.css';
 import './command-center.css';
 import DispatchRequestQueue from './DispatchRequestQueue.jsx';
 import AssignmentActions from './AssignmentActions.jsx';
+import DeliveryWorkflow from './DeliveryWorkflow.jsx';
 
 const NAV = [
   { id: 'overview', label: 'Overview', icon: LayoutDashboard },
@@ -92,9 +93,13 @@ function ShipmentDetail({ active, driver, organizationId, role, currentUserId, p
         <div><small>Assigned driver</small><strong>{driver?.display_name || (active.driver_user_id ? 'Driver assigned' : 'Unassigned')}</strong></div>
         <div><small>Created</small><strong>{stamp(active.created_at)}</strong></div>
       </div>
-      {!isDemo ? <AssignmentActions assignment={active} role={role} currentUserId={currentUserId}
-        profile={profile} drivers={drivers} vehicles={vehicles} onChanged={reload}/> :
-        <p className="at-demo-note"><ShieldCheck size={15}/> Preview only. Assignment actions are disabled for sample data.</p>}
+      {!isDemo ? <>
+        <AssignmentActions assignment={active} role={role} currentUserId={currentUserId}
+          profile={profile} drivers={drivers} vehicles={vehicles} onChanged={reload}/>
+        <DeliveryWorkflow key={organizationId + ':' + active.id} assignment={active}
+          organizationId={organizationId} currentUserId={currentUserId}
+          role={role} profile={profile} onChanged={reload}/>
+      </> : <p className="at-demo-note"><ShieldCheck size={15}/> Preview only. Assignment and evidence actions are disabled for sample data.</p>}
     </>}
   </section>;
 }
