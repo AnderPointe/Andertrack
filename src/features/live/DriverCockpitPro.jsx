@@ -40,7 +40,7 @@ export function DutyScenarioLab({person,baseSlots}) {
     setCursor(32);
     setStatus(person.status);
     setEditCount(0);
-  },[person.id]);
+  },[person.id,baseSlots]);
 
   function applyEdit(){
     if(!DEMO_STATES.has(status))return;
