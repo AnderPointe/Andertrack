@@ -1,6 +1,6 @@
 import React,{useEffect,useRef,useState} from 'react';
 import * as THREE from 'three';
-import {Box,Check,ChevronDown,Maximize2,Move3D,Palette,Play,Rotate3D,RotateCcw,Truck} from 'lucide-react';
+import {Check,RotateCcw,Truck} from 'lucide-react';
 import {VEHICLE_FORMS,VEHICLE_COLORS,vehicleForm,vehicleDisplay} from '../../lib/vehicle-3d.js';
 import './vehicle-3d.css';
 
