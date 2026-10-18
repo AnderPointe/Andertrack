@@ -26,9 +26,12 @@ or client-editable JWT role metadata.
 3. Seed another nonclosed DVIR in A owned by a **different** staging driver.
    Record its ID to verify driver A cannot see it. These must be nonproduction
    fixture identities; no real driver or safety data should be copied.
-4. Record IDs for the two organizations, the OOS vehicle, a DVIR owned by
+4. Create at least one DVIR in organization B to prove the B dispatcher
+   can see real fixture data while dispatcher A cannot (avoids a vacuous
+   zero-row RLS pass).
+5. Record IDs for the two organizations, the OOS vehicle, a DVIR owned by
    driver A, and a DVIR owned by another A driver in a local secrets manager.
-5. Use a **publishable** Supabase key. Do not use the service-role/secret key,
+6. Use a **publishable** Supabase key. Do not use the service-role/secret key,
    and never commit passwords or `.env` files.
 
 The current staging project has no retained vehicles, assignments or driver
@@ -59,6 +62,7 @@ P10_DISPATCHER_B_PASSWORD=<staging dispatcher B password>
 P10_OOS_VEHICLE_ID=<staging vehicle with open OOS defect>
 P10_DRIVER_A_DVIR_ID=<staging DVIR authored by driver A>
 P10_OTHER_DRIVER_DVIR_ID=<staging DVIR authored by another driver in org A>
+P10_ORG_B_DVIR_ID=<staging DVIR authored inside org B>
 ```
 
 Once variables are available locally and dependencies installed:
@@ -76,7 +80,10 @@ an operational safety/ELD certification.
 ## Protected Vercel preview and manual browser checklist
 First reconnect the Vercel integration with access to the
 `flygeek88-5522` team and verify the exact QA preview revision corresponds
-to the intended PR #30 head. Keep Vercel Deployment Protection enabled;
+to the intended PR #30 head. **Audit Vercel preview environment variable
+`VITE_SUPABASE_URL` first: it MUST resolve to the staging Supabase host,
+not the production database. Do not log into a preview whose target
+cannot be verified.** Keep Vercel Deployment Protection enabled;
 do not use long-lived bypass secrets in chat.
 
 With separate browser profiles and **staging-configured preview only**:
