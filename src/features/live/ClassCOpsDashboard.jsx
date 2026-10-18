@@ -484,9 +484,10 @@ function AnalyticsTab({isDemo,vehicles,counts,selectedUnitId='',onSelectVehicle=
  </div>;
 }
 /** Reusable local-driver ribbon at top of Driver Cockpit. No server mutation. */
-export function ClassCShiftRibbon({isDemo=false,role='',currentUserId='',vehicles=[],assignments=[],drivers=[],locations=[],demoUnit=''}) {
+export function ClassCShiftRibbon({isDemo=false,role='',currentUserId='',organizationId='',vehicles=[],assignments=[],drivers=[],locations=[],demoUnit=''}) {
  const [dvirUnit,setDvirUnit]=useState(null);
  const [showMap,setShowMap]=useState(false);
+ const assigned=classCDriverAssignment({assignments,vehicles,currentUserId});
  return <><ShiftBar isDemo={isDemo} role={role} currentUserId={currentUserId}
    vehicles={vehicles} assignments={assignments} drivers={drivers} demoUnit={demoUnit}
    openDvir={setDvirUnit}/>
@@ -498,15 +499,19 @@ export function ClassCShiftRibbon({isDemo=false,role='',currentUserId='',vehicle
    currentUserId={currentUserId} vehicles={vehicles}
    assignments={assignments} locations={locations} mode="driver"/>}
  {dvirUnit!==null&&<DvirModal unit={dvirUnit} driverId={currentUserId}
-   isDemo={isDemo} close={()=>setDvirUnit(null)}/>}</>;
+   isDemo={isDemo} role={role} organizationId={organizationId}
+   vehicleId={assigned.vehicle?.unit_number===dvirUnit?assigned.vehicle?.id:''}
+   assignmentId={assigned.vehicle?.unit_number===dvirUnit?assigned.assignment?.id:''}
+   close={()=>setDvirUnit(null)}/>}</>;
 }
 export default function ClassCOpsDashboard({
- isDemo=false,role='',currentUserId='',vehicles=[],drivers=[],assignments=[],locations=[],
+ isDemo=false,role='',currentUserId='',organizationId='',vehicles=[],drivers=[],assignments=[],locations=[],
  onOpenDispatch=()=>{},
 }){
  const [tab,setTab]=useState('dashboard');
  const [showService,setShowService]=useState(false),[dvirUnit,setDvirUnit]=useState(null),
   [localServices,setLocalServices]=useState([]),[notice,setNotice]=useState('');
+ const ownActive=classCDriverAssignment({assignments,vehicles,currentUserId});
  const records=useMemo(()=>classCOpsRecords({vehicles,assignments,drivers,role,currentUserId,isDemo}),
    [vehicles,assignments,drivers,role,currentUserId,isDemo]);
  const displayVehicles=isDemo?NORTHVALE_REFERENCE_VEHICLES:records.vehicles;
@@ -557,6 +562,9 @@ export default function ClassCOpsDashboard({
   {tab==='service'&&<ServiceTab vehicles={displayVehicles} isDemo={isDemo}
     schedule={localScheduled} onOpen={()=>setShowService(true)}
     onRemove={id=>setLocalServices(s=>s.filter(x=>x.id!==id))}/>}
+  {tab==='service'&&!isDemo&&<FleetMaintenanceCenter
+    organizationId={organizationId} role={role} currentUserId={currentUserId}
+    vehicles={records.vehicles}/>}
   {tab==='analytics'&&<AnalyticsTab isDemo={isDemo} vehicles={displayVehicles} counts={counts}
     selectedUnitId={detailUnit?.id||''} onSelectVehicle={setDetailUnit}/>}
   {notice&&<div className="at-nv-flash" role="status">{notice}
@@ -564,6 +572,9 @@ export default function ClassCOpsDashboard({
   {showService&&<ServiceModal isDemo={isDemo} vehicles={displayVehicles}
     create={addService} cancel={()=>setShowService(false)}/>}
   {dvirUnit!==null&&<DvirModal unit={dvirUnit} driverId={currentUserId}
-    isDemo={isDemo} close={()=>setDvirUnit(null)}/>}
+    isDemo={isDemo} role={role} organizationId={organizationId}
+    vehicleId={ownActive.vehicle?.unit_number===dvirUnit?ownActive.vehicle?.id:''}
+    assignmentId={ownActive.vehicle?.unit_number===dvirUnit?ownActive.assignment?.id:''}
+    close={()=>setDvirUnit(null)}/>}
  </div>;
 }
