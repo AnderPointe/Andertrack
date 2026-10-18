@@ -108,29 +108,47 @@ function Donut({series}) {
   <i style={{background:['#0c9d74','#9fdbbd','#f6b751','#7da9bd'][i%4]}}/>
   <span>{s.label}</span><strong>{money(s.value)}</strong></div>)}</div></div>;
 }
-function SubsystemInspector({sample}) {
- const systems=sample?NORTHVALE_DEMO.subsystems:[];
+function SubsystemInspector({sample,vehicle}) {
+ const hotspots=sample?northvaleHotspots(vehicle?.unit_number):[];
+ const [selectedId,setSelectedId]=useState('');
+ useEffect(()=>setSelectedId(''),[vehicle?.id]);
+ const selected=hotspots.find(x=>x.id===selectedId)||hotspots[0]||null;
+ const systems=sample?(vehicle?.subsystems?
+   Object.entries(vehicle.subsystems).map(([label,[score,unit]])=>({
+     label,score,unit,tone:label==='Transmission'&&score<60?'alert':
+       score<70?'watch':'good',
+   })):NORTHVALE_DEMO.subsystems):[];
  return <div className="at-nv-analytics-inspector">
-  <div className="at-nv-overhead" role="img"
-    aria-label="Illustrative top-down vehicle inspection diagram with sample brake and tire hotspots">
-   <div className="at-nv-top-car"><div className="at-nv-windshield"/>
+  <div className="at-nv-overhead" aria-label={sample?
+      'Interactive fictional top-down vehicle diagnostic overview':'Vehicle diagram without connected diagnostic sensors'}>
+   <div className="at-nv-top-car" aria-hidden="true"><div className="at-nv-windshield"/>
      <div className="at-nv-roof"/><div className="at-nv-hood"/>
      <span className="wheel front-left"/><span className="wheel front-right"/>
      <span className="wheel rear-left"/><span className="wheel rear-right"/>
    </div>
-   {sample&&<><span className="at-nv-hotspot front">! <small>Brake inspection</small></span>
-      <span className="at-nv-hotspot rear">! <small>Rear tire pressure</small></span></>}
-   <span className="at-nv-top-car-caption">{sample?'ILLUSTRATIVE TELEMETRY':'NO VEHICLE SENSOR LINK'}</span>
+   {hotspots.map(h=><button type="button" key={h.id}
+     className={'at-nv-hotspot-pin '+h.severity+(selected?.id===h.id?' selected':'')}
+     style={{left:h.x+'%',top:h.y+'%'}} onClick={()=>setSelectedId(h.id)}
+     aria-pressed={selected?.id===h.id} title={'Sample: '+h.label}
+     aria-label={'Inspect simulated '+h.label}>!</button>)}
+   <span className="at-nv-top-car-caption">{sample?'SAMPLE SYSTEM READINGS':'NO VEHICLE SENSOR LINK'}</span>
   </div>
-  <div className="at-nv-subsystems">{sample?systems.map(system=><div className="at-nv-system" key={system.label}>
-    <div><span>{system.label}</span><strong>{system.score}{system.unit}</strong></div>
-    <div className="at-nv-progress"><span className={system.tone}
-      style={{width:Math.max(0,Math.min(100,system.label==='Fuel economy'?86:system.score))+'%'}}/></div></div>):
-  <Unconnected title="Six vehicle subsystems not connected"
-    detail="Engine, brakes, transmission, TPMS, battery, fuel economy and efficiency require vehicle telematics."
-    icon={Stethoscope}/>}</div>
+  <div className="at-nv-subsystems">
+   {sample&&<div className="at-nv-hotspot-reader" role="status">
+     <strong>{vehicle?.unit_number||'Sample equipment'} · Diagnostic Hotspots</strong>
+     {selected?<><span>{selected.label}</span><small>Illustrative {selected.severity} reading · not a verified repair ticket</small></>:
+       <span>No sample hotspot flagged for this unit.</span>}
+   </div>}
+   {sample?systems.map(system=><div className="at-nv-system" key={system.label}>
+     <div><span>{system.label}</span><strong>{system.score}{system.unit}</strong></div>
+     <div className="at-nv-progress"><span className={system.tone}
+       style={{width:Math.max(0,Math.min(100,system.label==='Fuel'?system.score*10:system.score))+'%'}}/></div></div>):
+   <Unconnected title="Six vehicle subsystems not connected"
+     detail="Engine, brakes, transmission, TPMS, battery, fuel economy and efficiency require vehicle telematics."
+     icon={Stethoscope}/>}</div>
  </div>;
 }
+
 function ShiftBar({isDemo=false,role='',currentUserId='',records,vehicles,assignments,drivers,openDvir,demoUnit=''}) {
  const driver=role==='driver';
  const [expanded,setExpanded]=useState(true),[running,setRunning]=useState(false),
