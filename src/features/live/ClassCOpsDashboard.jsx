@@ -244,10 +244,10 @@ function DvirModal({unit='',close,driverId,isDemo}) {
  </form></div>;
 }
 
-function DashboardTab({vehicles,assignments,counts,isDemo,onService,onDetails}) {
- const [index,setIndex]=useState(0);
- const displayed=isDemo?NORTHVALE_DEMO_VEHICLES:vehicles;
- const selected=displayed[index]||displayed[0]||null;
+function DashboardTab({vehicles,assignments,counts,isDemo,onService,onDetails,
+  selectedUnitId='',onSelectVehicle=()=>{},schedule=[]}) {
+ const displayed=vehicles;
+ const selected=displayed.find(v=>v.id===selectedUnitId)||displayed[0]||null;
  const stats=isDemo?NORTHVALE_DEMO.summary:
   {total:counts.total,active:counts.active,maintenance:null,criticalAlerts:null};
  return <div className="at-nv-tab-content">
@@ -263,7 +263,7 @@ function DashboardTab({vehicles,assignments,counts,isDemo,onService,onDetails}) 
    sub="Select a unit and rotate its generic 3D body preview"
    action={<span className="at-nv-chip">{isDemo?'NORTHVALE SAMPLE':'LIVE INVENTORY'}</span>}/>
    {selected?<><div className="at-nv-vehicle-selector">
-     {displayed.map((v,i)=><button key={v.id} className={selected.id===v.id?'selected':''} onClick={()=>setIndex(i)}
+     {displayed.map((v,i)=><button key={v.id} className={selected.id===v.id?'selected':''} onClick={()=>onSelectVehicle(v) }
        aria-pressed={selected.id===v.id}>{v.unit_number}<small>{v.model||v.vehicle_type}</small></button>)}</div>
      <Vehicle3D key={selected.id} vehicle={selected} compact isDemo={isDemo}
        title={vehicleDisplay(selected).title+' · 3D model concept'}/>
@@ -277,7 +277,7 @@ function DashboardTab({vehicles,assignments,counts,isDemo,onService,onDetails}) 
   </section>
   <section className="at-nv-panel"><SectionTitle title="Upcoming Schedule"
    sub="Weekly workshop plan" action={<button className="at-nv-link" onClick={onService}>Open service plan <ArrowRight size={14}/></button>}/>
-   {isDemo?<div className="at-nv-schedule-list">{NORTHVALE_DEMO_SCHEDULE.slice(0,4).map(x=><div key={x.id}>
+   {isDemo?<div className="at-nv-schedule-list">{schedule.slice(0,4).map(x=><div key={x.id}>
     <div className="at-nv-date"><CalendarDays size={15}/><strong>{NORTHVALE_DEMO_WEEK[x.day]}</strong><small>{x.time}</small></div>
     <div><strong>{x.job}</strong><small>{x.unit} · {x.bay}</small></div>
     <Status label={x.state} tone={x.state==='Completed'?'good':'watch'}/></div>)}</div>:
@@ -311,7 +311,7 @@ function DashboardTab({vehicles,assignments,counts,isDemo,onService,onDetails}) 
  </div>;
 }
 
-function VehiclesTab({vehicles,isDemo,alerts,focusId=''}) {
+function VehiclesTab({vehicles,isDemo,alerts,focusId='',onSelectVehicle=()=>{}}) {
  const [active,setActive]=useState(''),[query,setQuery]=useState('');
  useEffect(()=>{if(focusId)setActive(focusId);},[focusId]);
  const filtered=vehicles.filter(v=>[v.make,v.model,v.unit_number,v.vehicle_type].join(' ')
@@ -348,7 +348,7 @@ function VehiclesTab({vehicles,isDemo,alerts,focusId=''}) {
       placeholder="Search Class C equipment"/></label>}/>
     <div className="at-nv-vehicle-health-body">
       <div className="at-nv-vehicle-list">{filtered.map(v=><button key={v.id}
-        className={selected?.id===v.id?'selected':''} onClick={()=>setActive(v.id)}>
+        className={selected?.id===v.id?'selected':''} onClick={()=>{setActive(v.id);onSelectVehicle(v);}}>
        <span><Truck size={18}/></span><div><strong>{v.unit_number}</strong><small>{vehicleDisplay(v).title}</small></div>
        {isDemo?<strong className="at-nv-sample-score">{v.score}/100</strong>:
          <span className="at-nv-unverified">Health unavailable</span>}</button>)}
@@ -391,13 +391,22 @@ function ServiceTab({vehicles,isDemo,schedule,onOpen,onRemove}) {
   </section>
  </div>;
 }
-function AnalyticsTab({isDemo,vehicles,counts}) {
+function AnalyticsTab({isDemo,vehicles,counts,selectedUnitId='',onSelectVehicle=()=>{}}) {
  const h=NORTHVALE_DEMO;
+ const selected=vehicles.find(v=>v.id===selectedUnitId)||vehicles[0]||null;
  return <div className="at-nv-tab-content">
   <div className="at-nv-dashboard-split">
    <section className="at-nv-panel"><SectionTitle title="Top-Down Hotspot Inspector"
-    sub={isDemo?'Synthetic brake and tire events':'No connected diagnostic sensors'}/>
-    <SubsystemInspector sample={isDemo}/></section>
+    sub={isDemo?'Interactive fictional brake, tire and engine callouts':'No connected diagnostic sensors'}/>
+    {isDemo&&<label className="at-nv-inspector-select">Inspect sample unit
+      <select aria-label="Choose Class C unit for diagnostic illustration"
+        value={selected?.id||''} onChange={e=>{
+          const found=vehicles.find(v=>v.id===e.target.value);
+          if(found)onSelectVehicle(found);
+        }}>
+        {vehicles.map(v=><option key={v.id} value={v.id}>{v.unit_number} · {v.model||v.vehicle_type}</option>)}
+      </select></label>}
+    <SubsystemInspector sample={isDemo} vehicle={selected}/></section>
    <section className="at-nv-panel"><SectionTitle title="Maintenance Cost Breakdown"
     sub={isDemo?'Illustrative monthly breakdown':'Service ledger not connected'}/>
     {isDemo?<><Donut series={classCCostBreakdown(h.operatingCosts)}/>
@@ -449,12 +458,12 @@ export default function ClassCOpsDashboard({
   [localServices,setLocalServices]=useState([]),[notice,setNotice]=useState('');
  const records=useMemo(()=>classCOpsRecords({vehicles,assignments,drivers,role,currentUserId,isDemo}),
    [vehicles,assignments,drivers,role,currentUserId,isDemo]);
- const displayVehicles=isDemo?NORTHVALE_DEMO_VEHICLES:records.vehicles;
+ const displayVehicles=isDemo?NORTHVALE_REFERENCE_VEHICLES:records.vehicles;
  const counts=isDemo?NORTHVALE_DEMO.summary:records.counts;
  const canFleet=isDemo||role==='admin'||role==='dispatcher';
  const isClassCDriver=role==='driver'&&drivers.some(d=>d.user_id===currentUserId&&d.license_class==='C');
  const [detailUnit,setDetailUnit]=useState(null);
- const localScheduled=isDemo?[...NORTHVALE_DEMO_SCHEDULE,...localServices]:localServices;
+ const localScheduled=isDemo?[...NORTHVALE_REFERENCE_SCHEDULE,...localServices]:localServices;
  if(!canFleet&&!isClassCDriver)return <div className="at-nv"><Unconnected
    title="Class C operations access restricted" detail="This workspace is available to authorized fleet staff and their signed-in Class C drivers."/></div>;
  const onDetails=(vehicle,destination='vehicles')=>{
@@ -488,13 +497,17 @@ export default function ClassCOpsDashboard({
     vehicles={vehicles} assignments={assignments} locations={locations}
     mode={role==='driver'&&!isDemo?'driver':'fleet'}/>}
   {tab==='dashboard'&&<DashboardTab vehicles={displayVehicles} assignments={records.assignments}
-    counts={counts} isDemo={isDemo} onService={()=>setTab('service')} onDetails={onDetails}/>}
+    counts={counts} isDemo={isDemo} onService={()=>setTab('service')}
+    onDetails={onDetails} schedule={localScheduled}
+    selectedUnitId={detailUnit?.id||''} onSelectVehicle={setDetailUnit}/>}
   {tab==='vehicles'&&<VehiclesTab vehicles={displayVehicles} isDemo={isDemo}
-    alerts={NORTHVALE_DEMO_ALERTS} focusId={detailUnit?.id||''}/>}
+    alerts={isDemo?NORTHVALE_REFERENCE_ALERTS:[]}
+    focusId={detailUnit?.id||''} onSelectVehicle={setDetailUnit}/>}
   {tab==='service'&&<ServiceTab vehicles={displayVehicles} isDemo={isDemo}
     schedule={localScheduled} onOpen={()=>setShowService(true)}
     onRemove={id=>setLocalServices(s=>s.filter(x=>x.id!==id))}/>}
-  {tab==='analytics'&&<AnalyticsTab isDemo={isDemo} vehicles={displayVehicles} counts={counts}/>}
+  {tab==='analytics'&&<AnalyticsTab isDemo={isDemo} vehicles={displayVehicles} counts={counts}
+    selectedUnitId={detailUnit?.id||''} onSelectVehicle={setDetailUnit}/>}
   {notice&&<div className="at-nv-flash" role="status">{notice}
     <button onClick={()=>setNotice('')} aria-label="Dismiss notice"><X size={14}/></button></div>}
   {showService&&<ServiceModal isDemo={isDemo} vehicles={displayVehicles}
