@@ -19,12 +19,12 @@ Prerequisite: Phase 9 schema (`at_vehicle_dvir_reports`, `at_vehicle_service_ord
 
 - A private SECURITY DEFINER **trigger**, inaccessible directly to Data API clients,
   runs before new assignment offers, FIFO claims (which create offers), and acceptance,
-  and before active equipment reassignment. It rejects the attempt when a vehicle
+  and before forward movement through active shipment statuses or equipment reassignment. It rejects the attempt when a vehicle
   has any nonclosed, `out-of-service` driver-reported defect in its organization.
 - Severe defect submission and dispatch candidate changes lock the same equipment
   row, serializing the check with a concurrent new OOS report.
 - The trigger does not silently cancel already accepted/in-progress loads when
-  a new severe defect is reported. Dispatch must contact the driver, hold operation,
+  a new severe defect is reported. A subsequent forward status transition is blocked by the trigger, but dispatch must contact the driver, hold operation,
   and document incident-specific disposition under company procedures.
 - An existing **administratively closed** report is not a professional mechanic
   certification or roadworthiness decision. Safety/compliance must define a separate
