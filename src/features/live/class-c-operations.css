@@ -314,3 +314,7 @@
  .at-nv-alert-shortcut{flex-shrink:0}}
 @media(max-width:470px){.at-nv-header-search{flex-basis:100%}
  .at-nv-mode{font-size:8px}}
+
+/* Keep the alert shortcut keyboard-friendly after scrolling into the panel. */
+.at-nv-alert-target{scroll-margin-top:95px}
+.at-nv-alert-target:focus-visible{outline:2px solid #d99c36;outline-offset:3px}
