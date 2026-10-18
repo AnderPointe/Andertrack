@@ -142,7 +142,7 @@ export default function DriverCockpit({
       <ClassCShiftRibbon key={'shift:'+person.id+':'+currentUserId} isDemo={isDemo}
         role={role} currentUserId={currentUserId}
         vehicles={vehicles} assignments={assignments} drivers={drivers}
-        demoUnit={isDemo?person.unit:''}/>}
+        locations={locations} demoUnit={isDemo?person.unit:''}/>}
 
     {cinemaAccess.visible&&<ArcviewCinema
       key={cinemaAccess.sampleOnly ? 'cinema-sample:'+person.id : 'cinema-driver:'+currentUserId}
