@@ -95,6 +95,16 @@ export async function reviewAuthenticatedDvir(client,{
  });
  return fail({data,error});
 }
+/** Phase 10: read-only, RLS-scoped snapshot. Never assume missing RPC = clear. */
+export async function loadDispatchSafetySnapshot(client,{organizationId}={}) {
+ if(!client||!organizationId)throw new Error('Fleet safety status is unavailable.');
+ const {data,error}=await client.rpc('at_dispatch_vehicle_safety_status',{
+  p_organization_id:organizationId,
+ });
+ if(error)throw new Error(error.message||'Fleet safety screening failed.');
+ if(!Array.isArray(data))throw new Error('Fleet safety response is incomplete.');
+ return data;
+}
 export function serviceOrderSummary(orders=[]) {
  return {open:orders.filter(x=>['scheduled','in_service'].includes(x.status)).length,
   completed:orders.filter(x=>x.status==='completed').length,

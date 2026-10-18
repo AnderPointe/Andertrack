@@ -7,6 +7,9 @@ import {
 } from 'lucide-react';
 import { dispatchMatches, externalRoadRouteUrl, getDispatchQueueHead,
   planningSummary, validPickupCoordinates, DISTANCE_LABEL } from '../../lib/dispatch-planner.js';
+import { supabase } from '../../lib/supabase.js';
+import { loadDispatchSafetySnapshot } from '../../lib/fleet-maintenance-api.js';
+import { normalizeSafetySnapshot,SAFETY_SNAPSHOT_STATE } from '../../lib/fleet-safety-interlocks.js';
 import './dispatch-planner.css';
 
 const printable = value => String(value || 'Unknown').replaceAll('_',' ').replace(/\b\w/g,s=>s.toUpperCase());
@@ -34,6 +37,31 @@ export default function DispatchPlanner({
   const [tab,setTab]=useState('recommended');
   const [pairLimit,setPairLimit]=useState(8);
   const [filter,setFilter]=useState('');
+  const [safety,setSafety]=useState({state:SAFETY_SNAPSHOT_STATE.UNAVAILABLE,
+    organizationId:'',holds:[],coveredVehicleIds:[],checkedAt:null});
+  useEffect(()=>{
+    if(isDemo || !planner || !organizationId) {
+      setSafety({state:SAFETY_SNAPSHOT_STATE.UNAVAILABLE,
+        organizationId,holds:[],coveredVehicleIds:[],checkedAt:null});
+      return undefined;
+    }
+    let active=true;
+    const fetchSafety=async()=>{
+      setSafety(previous=>previous.organizationId===organizationId ?
+        previous:{state:SAFETY_SNAPSHOT_STATE.LOADING,organizationId,
+          holds:[],coveredVehicleIds:[],checkedAt:null});
+      try{
+        const rows=await loadDispatchSafetySnapshot(supabase,{organizationId});
+        if(active)setSafety(normalizeSafetySnapshot(rows,organizationId));
+      }catch(_error){
+        if(active)setSafety({state:SAFETY_SNAPSHOT_STATE.UNAVAILABLE,
+          organizationId,holds:[],coveredVehicleIds:[],checkedAt:null});
+      }
+    };
+    fetchSafety();
+    const interval=setInterval(fetchSafety,45000);
+    return ()=>{active=false;clearInterval(interval);};
+  },[organizationId,isDemo,planner]);
   const waiting=useMemo(()=>[...assignments].filter(a=>a.status==='unassigned'&&!a.driver_user_id)
     .sort((a,b)=>Date.parse(a.scheduled_pickup_at||a.created_at||0)-Date.parse(b.scheduled_pickup_at||b.created_at||0)),
     [assignments]);
@@ -50,7 +78,8 @@ export default function DispatchPlanner({
   const pairings=useMemo(()=>dispatchMatches({
     load:selected,drivers,vehicles,assignments,requests,locations,
     pickup:coordinates,requiredWeightLbs:weight.trim()===''?null:weight,now:Date.now(),
-  }),[selected,drivers,vehicles,assignments,requests,locations,latitude,longitude,weight]);
+    safetySnapshot:isDemo?null:safety,safetyOrganizationId:organizationId,
+  }),[selected,drivers,vehicles,assignments,requests,locations,latitude,longitude,weight,safety,organizationId,isDemo]);
   const summary=planningSummary(pairings,requests,coordinates,weight);
   const shown=pairings.filter(p=>(tab==='all'||p.eligible)&&
     (!filter.trim()||[p.driverName,p.vehicleName,p.vehicleClass,p.vehicleType].join(' ')
@@ -79,6 +108,19 @@ export default function DispatchPlanner({
     {isDemo&&<div className="at-planner-demo"><ShieldCheck size={16}/>
       SAMPLE ENVIRONMENT · No live assignments, dispatch claims or road routing requests are made.</div>}
 
+    <section className="at-surface at-planner-safety" aria-label="Phase 10 fleet safety evidence">
+      <ShieldAlert size={20}/>
+      <div><strong>{isDemo?'Sample fleet safety screening':
+        safety.state===SAFETY_SNAPSHOT_STATE.READY?
+          'Fleet safety snapshot loaded':'Safety screening unavailable — recommendations held'}</strong>
+        <p>{isDemo?'Demo recommendations use fictional data and do not grant dispatch permission.':
+          safety.state===SAFETY_SNAPSHOT_STATE.READY?
+            safety.holds.length+' units with open out-of-service DVIR holds. '+safety.coveredVehicleIds.length+
+              ' units screened by the organization-scoped read-only RPC. Server-side enforcement is still required.':
+            'The authenticated safety read or migration is unavailable. No pair may be recommended without a current snapshot; use established safety procedures.'}</p>
+        <small>Screening is advisory. Database trigger must independently block unsafe offers and acceptance; administrative DVIR closure is not certified roadworthiness clearance.</small>
+      </div>
+    </section>
     <div className="at-planner-stats">
       {[
         ['Unassigned loads',waiting.length,Route],
