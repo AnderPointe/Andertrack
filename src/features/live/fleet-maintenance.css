@@ -1,0 +1,57 @@
+/* Authenticated maintenance/DVIR workspace — scoped to Class C light theme */
+.at-maint{display:grid;gap:14px;background:#fff;border:1px solid #d8e8dc;
+ border-radius:14px;padding:17px;color:#234d35;min-width:0}
+.at-maint *{box-sizing:border-box}
+.at-maint button,.at-maint input,.at-maint select,.at-maint textarea{font:inherit}
+.at-maint button{cursor:pointer}
+.at-maint button:disabled{opacity:.5;cursor:not-allowed}
+.at-maint-head{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+.at-maint-head>div>span{font-size:9px;font-weight:900;letter-spacing:1.1px;color:#0b9863}
+.at-maint-head h3{display:flex;align-items:center;gap:8px;color:#225639;font-size:17px;margin:6px 0}
+.at-maint-head p{font-size:11px;color:#7e9485;margin:0;line-height:1.6}
+.at-maint-refresh{display:flex;align-items:center;gap:6px;padding:9px 11px;border:1px solid #cbe7d3;
+ background:#f0faf3;color:#18885b;border-radius:8px;font-size:11px;font-weight:750}
+.at-maint-unavailable{display:grid;justify-items:start;gap:8px;border:1px solid #f0d7a2;
+ background:#fff9ed;color:#a36a27;padding:18px;border-radius:11px}
+.at-maint-unavailable p{font-size:11px;line-height:1.5;margin:0;overflow-wrap:anywhere}
+.at-maint-unavailable small{color:#947e5d;font-size:10px}
+.at-maint-stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:9px}
+.at-maint-stats>div{display:grid;gap:8px;border:1px solid #d9e9df;border-radius:10px;
+ background:#f8fcf9;padding:12px}
+.at-maint-stats svg{color:#138b5e}
+.at-maint-stats strong{font-size:25px;color:#195f3f}
+.at-maint-stats span{font-size:10px;color:#759485}
+.at-maint-create{display:grid;gap:12px;padding:15px;border:1px solid #d6ebde;border-radius:10px;background:#f8fcf9}
+.at-maint-create h4{font-size:13px;color:#236244;margin:0}
+.at-maint-create-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.at-maint label{display:grid;gap:6px;font-size:10px;font-weight:710;color:#4e7c60}
+.at-maint input,.at-maint select,.at-maint textarea{background:#fff;color:#20543b;
+ border:1px solid #d4e5d9;border-radius:7px;padding:10px;min-width:0;width:100%;font-size:11px}
+.at-maint-primary{display:inline-flex;align-items:center;gap:7px;justify-content:center;
+ width:max-content;border:0;border-radius:8px;background:#128e5e;color:#fff;padding:11px 14px;font-size:11px;font-weight:850}
+.at-maint-create>small{font-size:10px;color:#84a090}
+.at-maint-columns{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.at-maint-list{display:grid;gap:10px;align-content:start;min-width:0}
+.at-maint-list h4{display:flex;align-items:center;gap:8px;margin:0;font-size:13px;color:#296247}
+.at-maint-list>p,.at-maint-wait{font-size:11px;color:#799081}
+.at-maint-list article{padding:13px;display:grid;gap:9px;border:1px solid #e0eae3;background:#fbfefb;border-radius:10px;min-width:0}
+.at-maint-list article header{display:flex;align-items:center;gap:8px;justify-content:space-between;flex-wrap:wrap}
+.at-maint-list article header strong{font-size:11px;color:#234d34}
+.at-maint-list article header span{color:#208d60;border-radius:8px;background:#e6f8ed;padding:6px 8px;font-size:9px}
+.at-maint-list article header span.critical{background:#ffeae7;color:#ca5149}
+.at-maint-list article p{font-size:11px;line-height:1.55;color:#5c7766;margin:0}
+.at-maint-list article small{font-size:9px;color:#849d8c;display:flex;align-items:center;gap:5px}
+.at-maint-history{font-size:10px;color:#4d7157;border-left:3px solid #4bc38e;
+ padding:8px;background:#edf9f2;border-radius:5px;overflow-wrap:anywhere}
+.at-maint-actions{display:flex;gap:7px;flex-wrap:wrap}
+.at-maint-actions button{padding:8px 9px;border:1px solid #a9d7b7;border-radius:7px;
+ background:#eaf9ef;color:#178250;font-size:10px;font-weight:760}
+.at-maint-warning{display:flex;gap:8px;align-items:flex-start;font-size:10px;color:#688574;line-height:1.6;margin:0;
+ border:1px solid #d9eadf;background:#f2fcf5;padding:10px;border-radius:8px}
+.at-maint-warning svg{flex-shrink:0}
+.at-maint-success,.at-maint-error{font-size:11px;padding:11px;border-radius:9px;margin:0}
+.at-maint-error{background:#fff1ee;color:#bb4c43;border:1px solid #f0c6c0}
+.at-maint-success{background:#eafbee;color:#157d52;border:1px solid #bfdfc9}
+@media(max-width:850px){.at-maint-columns{grid-template-columns:1fr}}
+@media(max-width:640px){.at-maint-stats{grid-template-columns:repeat(2,minmax(0,1fr))}
+.at-maint-create-grid{grid-template-columns:1fr}}

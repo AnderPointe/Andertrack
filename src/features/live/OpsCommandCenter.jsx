@@ -425,7 +425,7 @@ export default function OpsCommandCenter({
           </div>}
           {view==='class-c'&&<ClassCOpsDashboard
             key={organizationId+':'+userId+':'+(isDemo?'demo':'live')}
-            isDemo={isDemo} role={role} currentUserId={userId}
+            isDemo={isDemo} role={role} currentUserId={userId} organizationId={organizationId}
             vehicles={vehicles} assignments={ordered} drivers={drivers}
             locations={locations} onOpenDispatch={()=>open('dispatch')}/>}
           {view==='warehouse'&&<WarehouseOperationsDashboard

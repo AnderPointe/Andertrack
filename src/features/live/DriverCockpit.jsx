@@ -140,7 +140,7 @@ export default function DriverCockpit({
     {(isDemo?person.division==='Class C':isDriver&&drivers.some(d=>
       d.user_id===currentUserId&&d.license_class==='C'))&&
       <ClassCShiftRibbon key={'shift:'+person.id+':'+currentUserId} isDemo={isDemo}
-        role={role} currentUserId={currentUserId}
+        role={role} currentUserId={currentUserId} organizationId={organizationId}
         vehicles={vehicles} assignments={assignments} drivers={drivers}
         locations={locations} demoUnit={isDemo?person.unit:''}/>}
 
