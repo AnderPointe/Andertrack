@@ -105,13 +105,13 @@ function SubsystemInspector({sample}) {
     icon={Stethoscope}/>}</div>
  </div>;
 }
-function ShiftBar({isDemo=false,role='',currentUserId='',records,vehicles,assignments,drivers,openDvir}) {
+function ShiftBar({isDemo=false,role='',currentUserId='',records,vehicles,assignments,drivers,openDvir,demoUnit=''}) {
  const driver=role==='driver';
  const [expanded,setExpanded]=useState(true),[running,setRunning]=useState(false),
    [start,setStart]=useState(null),[base,setBase]=useState(0),[now,setNow]=useState(Date.now());
  useEffect(()=>{const interval=window.setInterval(()=>setNow(Date.now()),15000);
     return ()=>window.clearInterval(interval);},[]);
- const chosen=isDemo?{vehicle:NORTHVALE_DEMO_VEHICLES[1],assignment:{id:'nv-demo-load'}}:
+ const chosen=isDemo?{vehicle:{...NORTHVALE_DEMO_VEHICLES[1],unit_number:demoUnit||NORTHVALE_DEMO_VEHICLES[1].unit_number},assignment:{id:'nv-demo-load'}}:
    classCDriverAssignment({assignments,vehicles,currentUserId});
  const minutes=isDemo?DEMO_SHIFT.startOffsetMinutes+
    (running?classCShiftElapsed(start,now):0):base+(running?classCShiftElapsed(start,now):0);
@@ -377,6 +377,15 @@ function AnalyticsTab({isDemo,vehicles,counts}) {
       detail="AI recommendations require audited telemetry and maintenance events, with human confirmation."/>}
   </section>
  </div>;
+}
+/** Reusable local-driver ribbon at top of Driver Cockpit. No server mutation. */
+export function ClassCShiftRibbon({isDemo=false,role='',currentUserId='',vehicles=[],assignments=[],drivers=[],demoUnit=''}) {
+ const [dvirUnit,setDvirUnit]=useState(null);
+ return <><ShiftBar isDemo={isDemo} role={role} currentUserId={currentUserId}
+   vehicles={vehicles} assignments={assignments} drivers={drivers} demoUnit={demoUnit}
+   openDvir={setDvirUnit}/>
+ {dvirUnit!==null&&<DvirModal unit={dvirUnit} driverId={currentUserId}
+   isDemo={isDemo} close={()=>setDvirUnit(null)}/>}</>;
 }
 export default function ClassCOpsDashboard({
  isDemo=false,role='',currentUserId='',vehicles=[],drivers=[],assignments=[],
