@@ -9,6 +9,10 @@ import {
 import Vehicle3D from './Vehicle3D.jsx';
 import ClassCMapPanel from './ClassCMapPanel.jsx';
 import {
+  NORTHVALE_REFERENCE_VEHICLES,NORTHVALE_REFERENCE_ALERTS,
+  NORTHVALE_REFERENCE_SCHEDULE,NORTHVALE_REFERENCE_FORECAST,northvaleHotspots,
+} from '../../lib/northvale-reference-demo.js';
+import {
  NORTHVALE_TABS,NORTHVALE_DEMO,NORTHVALE_DEMO_VEHICLES,
  NORTHVALE_DEMO_SCHEDULE,NORTHVALE_DEMO_ALERTS,NORTHVALE_DEMO_WEEK,
  NORTHVALE_DEMO_COSTS,classCEligibility,classCOpsRecords,
@@ -51,26 +55,47 @@ function FleetGauge({score=null}) {
  <span>{valid?'DEMO HEALTH SCORE':'NO VERIFIED HEALTH FEED'}</span></div></div>;
 }
 function MonthlyChart({sample}) {
+ const [month,setMonth]=useState(5);
  if(!sample)return <Unconnected icon={DollarSign} title="No service-cost ledger connected"
    detail="Fleet maintenance actuals and forward forecasts require verified service invoices and budgets."/>;
- const max=5600;
- const points=type=>NORTHVALE_DEMO_COSTS.map((m,i)=>
-   [48+i*102,165-(m[type]/max)*128]);
- const path=(type)=>points(type).map(([x,y],i)=>(i?'L':'M')+x+' '+y).join(' ');
- return <svg viewBox="0 0 640 205" className="at-nv-cost-chart" role="img"
-   aria-label="Sample monthly maintenance costs actual versus forecast from January to June 2026">
- {Array.from({length:4},(_,i)=><line key={i} x1="48" x2="605" y1={52+i*36}
-   y2={52+i*36} stroke="#dce6e3" strokeDasharray="4 4"/>)}
- <path d={path('forecast')} fill="none" stroke="#a3c7bb" strokeDasharray="7 5"
-   strokeWidth="3" strokeLinecap="round"/>
- <path d={path('actual')+' L558 165 L48 165 Z'} fill="#c9f6e7" opacity=".5"/>
- <path d={path('actual')} fill="none" stroke="#0b9469" strokeWidth="4" strokeLinecap="round"/>
- {NORTHVALE_DEMO_COSTS.map((m,i)=><g key={m.month}>
- <circle cx={48+i*102} cy={165-m.actual/max*128} r="4" fill="#089c6f"/>
- <text x={48+i*102} y="192" fontSize="12" textAnchor="middle" fill="#779188">{m.month}</text>
- </g>)}
- </svg>;
+ const selected=NORTHVALE_REFERENCE_FORECAST[month];
+ const max=7500;
+ const points=kind=>NORTHVALE_REFERENCE_FORECAST.map((m,i)=>
+   [38+i*61,179-(m[kind]/max)*139]);
+ const path=kind=>points(kind).map(([x,y],i)=>(i?'L':'M')+x.toFixed(1)+' '+y.toFixed(1)).join(' ');
+ return <div className="at-nv-forecast-panel">
+  <div className="at-nv-forecast-inspector" aria-live="polite">
+   <strong>{selected.month} 2026</strong>
+   <span>Actual: <b>{money(selected.actual)}</b></span>
+   <span>Forecast: <b>{money(selected.forecast)}</b></span>
+   <small>Synthetic financial series · interactive sample</small>
+  </div>
+  <svg viewBox="0 0 760 220" className="at-nv-cost-chart"
+   aria-label="Synthetic actual versus forecasted monthly maintenance costs January through December 2026">
+  {Array.from({length:4},(_,i)=><line key={i} x1="38" x2="726" y1={48+i*44}
+    y2={48+i*44} stroke="#dce6e3" strokeDasharray="4 4"/>)}
+  <path d={path('forecast')} fill="none" stroke="#a3c7bb" strokeDasharray="7 5"
+    strokeWidth="3" strokeLinecap="round"/>
+  <path d={path('actual')+' L709 179 L38 179 Z'} fill="#c9f6e7" opacity=".55"/>
+  <path d={path('actual')} fill="none" stroke="#0b9469" strokeWidth="4" strokeLinecap="round"/>
+  {NORTHVALE_REFERENCE_FORECAST.map((m,i)=>{
+   const [x,y]=points('actual')[i];
+   return <g key={m.month} role="button" tabIndex={0}
+      aria-label={m.month+' actual '+money(m.actual)+' forecast '+money(m.forecast)}
+      onMouseEnter={()=>setMonth(i)} onFocus={()=>setMonth(i)}
+      onClick={()=>setMonth(i)}
+      onKeyDown={e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();setMonth(i);}}}>
+      {i===month&&<line x1={x} x2={x} y1="30" y2="180" stroke="#94c9af" strokeDasharray="3 4"/>}
+      <circle cx={x} cy={y} r={i===month?7:4} stroke="#0b9469"
+        strokeWidth={i===month?3:1} fill={i===month?'#ffffff':'#0b9469'}/>
+      <text x={x} y="210" fontSize="12" textAnchor="middle"
+        fontWeight={i===month?'bold':'normal'} fill={i===month?'#14724a':'#779188'}>{m.month}</text>
+    </g>;
+  })}
+  </svg>
+ </div>;
 }
+
 function Donut({series}) {
  const total=series.reduce((s,x)=>s+x.value,0);
  let acc=0;
