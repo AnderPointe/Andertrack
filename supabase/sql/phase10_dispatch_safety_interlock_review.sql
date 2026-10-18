@@ -40,11 +40,12 @@ REVOKE ALL ON FUNCTION at_internal.serialize_severe_dvir_insert()
 DROP TRIGGER IF EXISTS at_phase10_serialize_severe_dvir
  ON public.at_vehicle_dvir_reports;
 CREATE TRIGGER at_phase10_serialize_severe_dvir
- BEFORE INSERT ON public.at_vehicle_dvir_reports
+ BEFORE INSERT OR UPDATE OF severity,status,vehicle_id,organization_id
+ ON public.at_vehicle_dvir_reports
  FOR EACH ROW EXECUTE FUNCTION at_internal.serialize_severe_dvir_insert();
 
 -- Enforce on NEW offers, offers created from queued claims, acceptance,
--- and any active-assignment equipment/driver reassignment.
+-- and every forward active-status transition, plus equipment/driver reassignment.
 -- Existing in-progress loads reported unsafe AFTER acceptance require an
 -- immediate operational hold/escalation; this does not silently cancel loads.
 CREATE OR REPLACE FUNCTION at_internal.reject_unsafe_dispatch()
@@ -54,10 +55,10 @@ DECLARE must_check boolean := false;
 BEGIN
  IF TG_OP='INSERT' THEN
    must_check := NEW.vehicle_id IS NOT NULL AND NEW.status IN
-     ('offered','assigned','accepted');
+     ('offered','assigned','accepted','at_pickup','picked_up','in_transit');
  ELSE
    must_check := NEW.vehicle_id IS NOT NULL AND (
-     (NEW.status IN ('offered','assigned','accepted') AND
+     (NEW.status IN ('offered','assigned','accepted','at_pickup','picked_up','in_transit') AND
        (NEW.status IS DISTINCT FROM OLD.status OR
         NEW.vehicle_id IS DISTINCT FROM OLD.vehicle_id OR
         NEW.driver_user_id IS DISTINCT FROM OLD.driver_user_id))
