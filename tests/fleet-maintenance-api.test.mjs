@@ -27,9 +27,9 @@ test('service orders require a real scoped vehicle and valid task before RPC',()
 });
 function query(rows,error=null){
  const q={
-  select(){return this;},eq(){return this;},order(){return this;},limit(){
-   return Promise.resolve({data:rows,error});
-  }
+  select(){return this;},eq(){return this;},order(){return this;},
+  limit(){return this;},
+  then(resolve){return Promise.resolve({data:rows,error}).then(resolve);}
  };
  return q;
 }
