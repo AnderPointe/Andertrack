@@ -70,6 +70,8 @@ test('review-only database migration protects offers and acceptances, RLS-scoped
  const sql=readFileSync(new URL('../supabase/sql/phase10_dispatch_safety_interlock_review.sql',import.meta.url),'utf8');
  assert.match(sql,/REVIEW ONLY/);
  assert.match(sql,/BEFORE INSERT OR UPDATE OF status,vehicle_id,driver_user_id/);
+ assert.match(sql,/NEW.status IN \('offered','assigned','accepted','at_pickup','picked_up','in_transit'\)/);
+ assert.match(sql,/BEFORE INSERT OR UPDATE OF severity,status,vehicle_id,organization_id/);
  assert.match(sql,/out-of-service' AND d.status<>'closed'/);
  assert.match(sql,/FOR UPDATE;/);
  assert.match(sql,/at_phase10_serialize_severe_dvir/);
