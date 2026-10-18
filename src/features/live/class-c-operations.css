@@ -293,3 +293,24 @@
 .at-nv-quick-fleet-unit small{font-size:9px;line-height:1.4;color:#8fa194}
 @media(max-width:530px){.at-nv-forecast-inspector{gap:7px}
  .at-nv-quick-fleet .at-nv-status{font-size:8px;padding:6px}}
+
+/* Northvale prototype parity: global fleet search and actionable alert navigation. */
+.at-nv-header-search{display:flex;align-items:center;gap:7px;min-width:180px;max-width:275px;
+ border:1px solid #d4e4dc;background:#fff;padding:0 10px;border-radius:22px;color:#6e9180}
+.at-nv-header-search>svg{flex-shrink:0}
+.at-nv-header-search input{width:100%;min-width:0;max-width:100%;padding:11px 0;
+ outline:0!important;border:0!important;background:transparent!important;
+ font-size:10px!important;color:#244630!important}
+.at-nv-header-search input::placeholder{color:#92a499}
+.at-nv-header-search button{display:grid;place-items:center;background:transparent;
+ border:0;color:#679079;padding:3px;flex-shrink:0}
+.at-nv-alert-shortcut{display:flex;align-items:center;justify-content:center;gap:6px;
+ border:1px solid #dce6df;background:#fff;border-radius:20px;padding:10px;
+ font-size:10px;font-weight:790;color:#557863}
+.at-nv-alert-shortcut:hover{border-color:#64c79a;background:#f2fcf6}
+.at-nv-search-summary{font-size:10px;color:#59816a;background:#ecf7ef;
+ border:1px solid #d0e9d8;border-radius:9px;line-height:1.55;padding:9px 12px;margin:0}
+@media(max-width:730px){.at-nv-header-search{max-width:100%;flex:1;min-width:0}
+ .at-nv-alert-shortcut{flex-shrink:0}}
+@media(max-width:470px){.at-nv-header-search{flex-basis:100%}
+ .at-nv-mode{font-size:8px}}
