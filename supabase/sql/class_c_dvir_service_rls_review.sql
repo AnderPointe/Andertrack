@@ -77,7 +77,7 @@ ALTER TABLE public.at_vehicle_dvir_reports ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.at_vehicle_service_orders ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.at_vehicle_safety_events ENABLE ROW LEVEL SECURITY;
 REVOKE ALL ON public.at_vehicle_dvir_reports,public.at_vehicle_service_orders,
-  public.at_vehicle_safety_events FROM PUBLIC,anon;
+  public.at_vehicle_safety_events FROM PUBLIC,anon,authenticated;
 GRANT SELECT ON public.at_vehicle_dvir_reports,public.at_vehicle_service_orders,
   public.at_vehicle_safety_events TO authenticated;
 
