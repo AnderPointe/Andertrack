@@ -1,5 +1,6 @@
 import { freshGpsPosition, validGpsPosition, ACTIVE_STATUSES } from './operations.js';
 import { geoDistanceMiles } from './fleet-intelligence.js';
+import { screenVehicleSafety } from './fleet-safety-interlocks.js';
 
 // Deterministic dispatch screening and scenario comparison, not ML predictions.
 // Server RPCs must independently validate all real offers and FIFO queue claims.
@@ -41,6 +42,7 @@ function driverHasQualification(driver,vehicle) {
 export function dispatchMatches({
   load,drivers=[],vehicles=[],assignments=[],requests=[],locations=[],
   pickup=null,requiredWeightLbs=null,now=Date.now(),
+  safetySnapshot=null,safetyOrganizationId='',
 }={}) {
   if (!load?.id || load.status!=='unassigned' || load.driver_user_id) return [];
   const queuedHead=getDispatchQueueHead(requests);
@@ -70,6 +72,12 @@ export function dispatchMatches({
         reasons.push('License class does not meet vehicle requirement');
       if (busyDriverIds.has(driver.user_id)) reasons.push('Driver has another active assignment');
       if (busyVehicleIds.has(vehicle.id)) reasons.push('Vehicle has another active assignment');
+      if (safetySnapshot) {
+        const safety=screenVehicleSafety(safetySnapshot,vehicle.id,{
+          organizationId:safetyOrganizationId,now,
+        });
+        if(!safety.eligible)reasons.push(safety.reason);
+      }
       if(queuedHead && queuedHead.driver_user_id!==driver.user_id)
         reasons.push('FIFO queue: oldest request must be served first');
       if(!massValid) reasons.push('Invalid proposed shipment weight');
