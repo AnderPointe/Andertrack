@@ -427,7 +427,7 @@ export default function OpsCommandCenter({
             key={organizationId+':'+userId+':'+(isDemo?'demo':'live')}
             isDemo={isDemo} role={role} currentUserId={userId}
             vehicles={vehicles} assignments={ordered} drivers={drivers}
-            onOpenDispatch={()=>open('dispatch')}/>}
+            locations={locations} onOpenDispatch={()=>open('dispatch')}/>}
           {view==='warehouse'&&<WarehouseOperationsDashboard
             key={organizationId+':'+userId+':'+(isDemo?'demo':'live')}
             vehicles={vehicles} drivers={drivers} assignments={ordered} isDemo={isDemo} role={role}
