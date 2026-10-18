@@ -255,3 +255,41 @@
  .at-nv-modal-pair{grid-template-columns:1fr}
  .at-nv-header-actions{width:100%}}
 @media(prefers-reduced-motion:reduce){.at-nv *{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
+
+/* Adapted controls from the user-provided Northvale React demonstration. */
+.at-nv-forecast-panel{display:grid;gap:8px;min-width:0}
+.at-nv-forecast-inspector{display:flex;align-items:center;gap:12px;flex-wrap:wrap;
+ border:1px solid #e3f2e8;background:#f3fbf5;padding:10px 12px;border-radius:10px;
+ font-size:10px;color:#71917e}
+.at-nv-forecast-inspector strong{color:#1f5c3c;font-size:11px}
+.at-nv-forecast-inspector b{color:#068f5d}
+.at-nv-forecast-inspector small{color:#91a599}
+.at-nv-cost-chart g[role=button]{cursor:pointer;outline:none}
+.at-nv-cost-chart g[role=button]:focus-visible circle{stroke:#efa238;stroke-width:5}
+.at-nv-hotspot-pin{position:absolute;z-index:4;transform:translate(-50%,-50%);
+ display:grid;place-items:center;width:25px;height:25px;border:3px solid #fff;
+ border-radius:50%;background:#e35d53;color:#fff;font-size:14px;font-weight:900;
+ box-shadow:0 0 0 5px #e9625340,0 5px 12px #521f222e;cursor:pointer}
+.at-nv-hotspot-pin.healthy{background:#1ba978;box-shadow:0 0 0 5px #1ba97830}
+.at-nv-hotspot-pin.warning{background:#e6a035;box-shadow:0 0 0 5px #e6a03536}
+.at-nv-hotspot-pin.selected{outline:3px solid #285c42;outline-offset:3px}
+.at-nv-hotspot-reader{display:grid;gap:7px;padding:11px;background:#f0faf4;
+ border:1px solid #d8eee1;border-radius:9px}
+.at-nv-hotspot-reader strong{color:#176f48;font-size:11px}
+.at-nv-hotspot-reader span{color:#395b46;font-size:11px;line-height:1.5}
+.at-nv-hotspot-reader small{color:#87a18c;font-size:9px;line-height:1.5}
+.at-nv-inspector-select{display:grid;gap:7px;max-width:300px;margin-bottom:12px;
+ font-size:10px;color:#57876a;font-weight:760}
+.at-nv-inspector-select select{border:1px solid #d2e4d8;background:#f8fcfa;
+ border-radius:8px;padding:9px;color:#234c34;max-width:100%;font-size:11px}
+.at-nv-quick-fleet{display:grid;gap:7px;margin:0 0 18px}
+.at-nv-quick-fleet button{display:flex;align-items:center;justify-content:space-between;gap:8px;
+ text-align:left;border:1px solid #e3ece5;border-radius:9px;padding:10px;background:#fff;color:#2b523b}
+.at-nv-quick-fleet button:hover,.at-nv-quick-fleet button.selected{background:#effbf3;border-color:#79caa0}
+.at-nv-quick-fleet-unit{display:flex;align-items:center;gap:9px;min-width:0;flex:1}
+.at-nv-quick-fleet-unit svg{flex-shrink:0;color:#198b5a}
+.at-nv-quick-fleet-unit>span{display:grid;gap:4px;min-width:0}
+.at-nv-quick-fleet-unit strong{font-size:10px;color:#284a33}
+.at-nv-quick-fleet-unit small{font-size:9px;line-height:1.4;color:#8fa194}
+@media(max-width:530px){.at-nv-forecast-inspector{gap:7px}
+ .at-nv-quick-fleet .at-nv-status{font-size:8px;padding:6px}}
