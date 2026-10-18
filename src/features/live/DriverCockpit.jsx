@@ -11,6 +11,7 @@ import HolographicHud from './HolographicHud.jsx';
 import ArcviewCinema from './ArcviewCinema.jsx';
 import Vehicle3D from './Vehicle3D.jsx';
 import {assignedVehicleForDriver} from '../../lib/vehicle-3d.js';
+import {ClassCShiftRibbon} from './ClassCOpsDashboard.jsx';
 import { cockpitCinemaAccess } from '../../lib/arcview-cinema.js';
 import { validGpsPosition, freshGpsPosition } from '../../lib/operations.js';
 import {
@@ -135,6 +136,13 @@ export default function DriverCockpit({
         </select>
       </label>}
     </section>
+
+    {(isDemo?person.division==='Class C':isDriver&&drivers.some(d=>
+      d.user_id===currentUserId&&d.license_class==='C'))&&
+      <ClassCShiftRibbon key={'shift:'+person.id+':'+currentUserId} isDemo={isDemo}
+        role={role} currentUserId={currentUserId}
+        vehicles={vehicles} assignments={assignments} drivers={drivers}
+        locations={locations} demoUnit={isDemo?person.unit:''}/>}
 
     {cinemaAccess.visible&&<ArcviewCinema
       key={cinemaAccess.sampleOnly ? 'cinema-sample:'+person.id : 'cinema-driver:'+currentUserId}

@@ -22,11 +22,13 @@ import FleetHealthDashboard from './FleetHealthDashboard.jsx';
 import DispatchModeDashboard from './DispatchModeDashboard.jsx';
 import {WarehouseOperationsDashboard,DeliveryOverviewDashboard} from './ModernOperationsDashboards.jsx';
 import DriverVehicleProfiles from './DriverVehicleProfiles.jsx';
+import ClassCOpsDashboard from './ClassCOpsDashboard.jsx';
 
 const NAV = [
   { id: 'overview', label: 'Overview', icon: LayoutDashboard },
   { id: 'delivery-overview', label: 'Delivery Overview', icon: Package },
   { id: 'warehouse', label: 'Warehouse Operations', icon: Truck },
+  { id: 'class-c', label: 'Class C Fleet', icon: Truck },
   { id: 'tracking', label: 'Live tracking', icon: MapPinned },
   { id: 'intelligent-fleet', label: 'Fleet intelligence', icon: Radio },
   { id: 'fleet-health', label: 'Fleet Health', icon: HeartPulse },
@@ -321,6 +323,7 @@ export default function OpsCommandCenter({
             <p>{view==='overview'?'Everything moving, everyone connected. One command center.':
               view==='tracking'?'Real-time fleet visibility, location history and live operational context.':
               view==='warehouse'?'A bright equipment staging and warehouse operations view, linked to real shipment records.':
+              view==='class-c'?'Local non-CDL fleet operations, vehicle health readiness and sample maintenance planning.':
               view==='delivery-overview'?'A modern overview of completed shipments, delivery activity and vehicle selection.':
               view==='driver-cockpit'?'Authorized driver delivery controls and transparent ELD, payroll and telemetry integration readiness.':
               view==='intelligent-fleet'?'Replay recorded GPS traces, review telemetry quality and inspect local monitoring zones.':
@@ -420,6 +423,11 @@ export default function OpsCommandCenter({
             <ShipmentDetail active={selected} driver={currentDriver} role={role} organizationId={organizationId}
               currentUserId={userId} profile={profile} drivers={drivers} vehicles={vehicles} reload={reload} isDemo={isDemo}/>
           </div>}
+          {view==='class-c'&&<ClassCOpsDashboard
+            key={organizationId+':'+userId+':'+(isDemo?'demo':'live')}
+            isDemo={isDemo} role={role} currentUserId={userId}
+            vehicles={vehicles} assignments={ordered} drivers={drivers}
+            locations={locations} onOpenDispatch={()=>open('dispatch')}/>}
           {view==='warehouse'&&<WarehouseOperationsDashboard
             key={organizationId+':'+userId+':'+(isDemo?'demo':'live')}
             vehicles={vehicles} drivers={drivers} assignments={ordered} isDemo={isDemo} role={role}
