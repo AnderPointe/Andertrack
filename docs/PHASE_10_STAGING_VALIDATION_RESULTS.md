@@ -13,8 +13,10 @@ Environment: **Andertrack Staging** (project ref `ofyfausfhinwgrfmapgc`). Produc
 
 ## Incomplete validations / release blockers
 - This inspection does **not** prove a real driver/dispatcher browser login or two-tenant JWT/RLS isolation.
-- No fixture-backed rollback transaction, direct RPC offer, FIFO claim, acceptance, or concurrent OOS submission race test has been executed here. Staging currently has no driver profiles, fleet vehicles or assignments, so those scenarios require explicitly isolated staging fixtures and credentialed test identities.
-- No end-to-end test of blocking an in-progress status transition or documented manual safety escalation has been completed.
+- **Rollback-only SQL role/JWT simulation completed:** 11 assertions passed in Andertrack Staging. Verified authorized planner safety counts (three scoped units, two open OOS holds), foreign-organization planner RPC denial, cross-organization RLS read isolation, unsafe offer rejection, unsafe FIFO claim rejection with queue head intact, safe offer success, unsafe acceptance rejection, safe driver decline, unsafe active-status advancement rejection, owned assignment DVIR submission, and driver denial for the planner-only safety RPC. Runbook: `tests/sql/phase10_staging_rollback_smoke.sql`. This was executed twice: first with an ad hoc equivalent transaction and again from the exact committed test file.
+- **Transaction cleanup verified:** post-ROLLBACK counts were zero for synthetic vehicles, assignments, driver profiles, dispatch requests, DVIR reports, safety events, assignment events and synthetic auth users. The test file uses random IDs and ends in `ROLLBACK`.
+- **Still pending:** two concurrent database sessions racing a new severe defect against an offer/acceptance, plus real Supabase Auth browser credentials (SQL role/JWT simulation is not a browser sign-in). No operational test records were retained.
+- Active status advancement rejection **was verified at the database RPC layer** for an accepted load with an open severe defect. Driver notification, documented manual safety escalation and browser workflows have **not** been verified.
 - Vercel build readiness is not equivalent to authenticated browser visual QA.
 - No mechanic-certification, FMCSA-compliance, or automatic return-to-service determination is claimed.
 
