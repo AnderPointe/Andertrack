@@ -113,13 +113,13 @@ function ShiftBar({isDemo=false,role='',currentUserId='',records,vehicles,assign
     return ()=>window.clearInterval(interval);},[]);
  const chosen=isDemo?{vehicle:{...NORTHVALE_DEMO_VEHICLES[1],unit_number:demoUnit||NORTHVALE_DEMO_VEHICLES[1].unit_number},assignment:{id:'nv-demo-load'}}:
    classCDriverAssignment({assignments,vehicles,currentUserId});
- const minutes=isDemo?DEMO_SHIFT.startOffsetMinutes+
-   (running?classCShiftElapsed(start,now):0):base+(running?classCShiftElapsed(start,now):0);
+ const sampleOffset=isDemo?DEMO_SHIFT.startOffsetMinutes:0;
+ const minutes=sampleOffset+base+(running?classCShiftElapsed(start,now):0);
  const stops=isDemo?DEMO_SHIFT.stops:classCStops(assignments,currentUserId).length;
  const eligibleDriver=isDemo||(driver&&drivers.some(d=>d.user_id===currentUserId&&
    d.license_class==='C'));
  if(!eligibleDriver)return null;
- const run=()=>{if(running){setBase(minutes);setRunning(false);setStart(null);}
+ const run=()=>{if(running){setBase(Math.max(0,minutes-sampleOffset));setRunning(false);setStart(null);}
    else{setStart(Date.now());setRunning(true);}};
  return <section className="at-nv-shift"><div className="at-nv-shift-head"><div><span>CLASS C LOCAL SHIFT</span>
   <strong>{isDemo?'Sample delivery operator':'My local driver shift'}</strong></div>
@@ -267,8 +267,9 @@ function DashboardTab({vehicles,assignments,counts,isDemo,onService,onDetails}) 
  </div>;
 }
 
-function VehiclesTab({vehicles,isDemo,alerts}) {
+function VehiclesTab({vehicles,isDemo,alerts,focusId=''}) {
  const [active,setActive]=useState(''),[query,setQuery]=useState('');
+ useEffect(()=>{if(focusId)setActive(focusId);},[focusId]);
  const filtered=vehicles.filter(v=>[v.make,v.model,v.unit_number,v.vehicle_type].join(' ')
    .toLowerCase().includes(query.toLowerCase()));
  const selected=filtered.find(v=>v.id===active)||filtered[0]||null;
@@ -433,7 +434,7 @@ export default function ClassCOpsDashboard({
   {tab==='dashboard'&&<DashboardTab vehicles={displayVehicles} assignments={records.assignments}
     counts={counts} isDemo={isDemo} onService={()=>setTab('service')} onDetails={onDetails}/>}
   {tab==='vehicles'&&<VehiclesTab vehicles={displayVehicles} isDemo={isDemo}
-    alerts={NORTHVALE_DEMO_ALERTS}/>}
+    alerts={NORTHVALE_DEMO_ALERTS} focusId={detailUnit?.id||''}/>}
   {tab==='service'&&<ServiceTab vehicles={displayVehicles} isDemo={isDemo}
     schedule={localScheduled} onOpen={()=>setShowService(true)}
     onRemove={id=>setLocalServices(s=>s.filter(x=>x.id!==id))}/>}
