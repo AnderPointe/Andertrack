@@ -2,7 +2,7 @@ import React,{useMemo,useState} from 'react';
 import {ArrowRight,Compass,ExternalLink,MapPinned,Navigation,Radio,
   Search,ShieldAlert,ShieldCheck,Truck} from 'lucide-react';
 import FleetMap from './FleetMap.jsx';
-import {classCMapRecords,classCMapStats,classCDirectionsUrl,classCPositionUrl}
+import {classCMapStats,classCDirectionsUrl,classCPositionUrl,filterClassCMapPositions}
   from '../../lib/class-c-maps.js';
 import './class-c-maps.css';
 
@@ -13,7 +13,7 @@ const friendlyDate=value=>{
 
 export default function ClassCMapPanel({
   vehicles=[],assignments=[],locations=[],isDemo=false,
-  role='',currentUserId='',mode='fleet',
+  role='',currentUserId='',mode='fleet',visibleVehicleIds=null,globalQuery='',
 }) {
   const isDriver=role==='driver'&&!isDemo;
   const [selectedId,setSelectedId]=useState('');
@@ -23,9 +23,12 @@ export default function ClassCMapPanel({
     vehicles,assignments,locations,role,currentUserId,isDemo,now,
   }),[vehicles,assignments,locations,role,currentUserId,isDemo,now]);
   const all=stats.positioned;
-  const chosen=all.find(x=>x.id===selectedId)||null;
-  const filtered=all.filter(x=>[x.unit,x.assignment?.reference,x.vehicle?.make,
+  // Search is display-only: compute headline counts from the entire authorized scope.
+  const visible=filterClassCMapPositions(all,visibleVehicleIds);
+  const filtered=visible.filter(x=>[x.unit,x.assignment?.reference,x.vehicle?.make,
     x.vehicle?.model].join(' ').toLowerCase().includes(search.trim().toLowerCase()));
+  // Never retain a previously selected pin that no longer matches either search.
+  const chosen=filtered.find(x=>x.id===selectedId)||null;
   const positions=chosen?[chosen.location]:filtered.map(x=>x.location);
   const routeUnit=chosen||filtered[0]||null;
   const link=classCDirectionsUrl(routeUnit?.assignment);
@@ -45,12 +48,17 @@ export default function ClassCMapPanel({
       <div><Navigation size={16}/><strong>{stats.activeClassCLoads}</strong><span>Active assignments</span></div>
       <div><Radio size={16}/><strong>{stats.visibleGps}</strong><span>Fresh assigned GPS pings</span></div>
     </div>
+    {globalQuery.trim()&&<p className="at-class-c-map-filter-note" role="status">
+      Showing GPS pins for {visible.length} reporting {visible.length===1?'vehicle':'vehicles'} matching
+      the fleet search. Summary counters cover all authorized Class C records.
+      {!filtered.length?' No fresh GPS positions match both searches.':''}
+    </p>}
     <div className="at-class-c-map-layout">
       <div className="at-class-c-map-map-frame">
-        <FleetMap key={selectedId||'all:'+search} locations={positions} theme="light"
+        <FleetMap key={(chosen?.id||'all')+':'+search+':'+globalQuery} locations={positions} theme="light"
           className="at-class-c-fleet-map"
           onChoose={point=>{
-            const matched=all.find(x=>x.location.id===point.id ||
+            const matched=filtered.find(x=>x.location.id===point.id ||
               (x.driverId===point.driver_id&&x.unit===point.unit_number));
             if(matched)setSelectedId(matched.id);
           }}/>
@@ -60,7 +68,7 @@ export default function ClassCMapPanel({
           <input value={search} onChange={e=>{setSearch(e.target.value);setSelectedId('');}}
             placeholder="Search unit or load" aria-label="Search Class C fleet GPS"/></label>}
         {!isDriver&&<div className="at-class-c-map-pickers">
-          <button type="button" className={!selectedId?'selected':''} onClick={()=>setSelectedId('')}>
+          <button type="button" className={!chosen?'selected':''} onClick={()=>setSelectedId('')}>
             All reporting vehicles <span>{filtered.length}</span></button>
           {filtered.map(unit=><button type="button" key={unit.id}
              className={selectedId===unit.id?'selected':''} onClick={()=>setSelectedId(unit.id)}>

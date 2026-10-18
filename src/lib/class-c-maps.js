@@ -49,6 +49,15 @@ export function classCMapStats({
   return {visibleGps:positioned.length,activeClassCLoads:active.length,
     eligibleVehicles:permitted.length,positioned};
 }
+/** Reduce map markers to the globally filtered, already-authorized inventory.
+ * Null means no fleet filter; an empty array intentionally shows no markers.
+ * Fleet totals and safety/maintenance reports remain computed from original scope.
+ */
+export function filterClassCMapPositions(positioned=[],visibleVehicleIds=null) {
+  if(!Array.isArray(visibleVehicleIds))return positioned;
+  const allowed=new Set(visibleVehicleIds);
+  return positioned.filter(point=>allowed.has(point.vehicle?.id));
+}
 export function classCDirectionsUrl(assignment) {
   const a=String(assignment?.pickup_address||'').trim();
   const b=String(assignment?.dropoff_address||'').trim();

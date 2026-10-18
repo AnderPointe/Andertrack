@@ -2,6 +2,7 @@ import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {filterClassCFleet,classCOpsRecords} from '../src/lib/class-c-operations.js';
 import {NORTHVALE_REFERENCE_VEHICLES} from '../src/lib/northvale-reference-demo.js';
+import {filterClassCMapPositions} from '../src/lib/class-c-maps.js';
 
 test('Northvale sample search filters vehicle unit, model, driver and route without creating records',()=>{
  const all=NORTHVALE_REFERENCE_VEHICLES;
@@ -58,4 +59,34 @@ test('driver-scoped loader and filter cannot reveal another driver or vehicle',(
  assert.deepEqual(filterClassCFleet(scope.vehicles,'Mansfield',{
    drivers:scope.drivers,assignments:scope.assignments,
  }).map(v=>v.id),['a']);
+});
+
+test('global Class C search filters only GPS pins for authorized matching vehicles',()=>{
+ const vehicles=[
+  {id:'a',unit_number:'TX-100',vehicle_type:'cargo_van',make:'Ford',model:'Transit'},
+  {id:'b',unit_number:'TX-200',vehicle_type:'cargo_van',make:'Mercedes',model:'Sprinter'},
+ ];
+ const assignedLocations=[
+  {vehicle:{id:'a'},id:'gps-a',unit:'TX-100'},
+  {vehicle:{id:'b'},id:'gps-b',unit:'TX-200'},
+ ];
+ const searchResult=filterClassCFleet(vehicles,'Ford');
+ assert.deepEqual(searchResult.map(v=>v.id),['a']);
+ assert.deepEqual(filterClassCMapPositions(assignedLocations,searchResult.map(v=>v.id))
+   .map(point=>point.id),['gps-a']);
+ // No global query preserves existing GPS behavior; an empty search result removes all pins.
+ assert.equal(filterClassCMapPositions(assignedLocations,null).length,2);
+ assert.deepEqual(filterClassCMapPositions(assignedLocations,[]),[]);
+ assert.deepEqual(filterClassCMapPositions(assignedLocations,['unauthorized']),[]);
+ assert.deepEqual(filterClassCMapPositions(assignedLocations,['a','outside']),
+   [assignedLocations[0]]);
+});
+
+test('unmatched demo search is an explicit empty selection, never another driver',()=>{
+ const visible=filterClassCFleet(NORTHVALE_REFERENCE_VEHICLES,'not-a-real-unit',{isDemo:true});
+ assert.deepEqual(visible,[]);
+ const focused=visible[0]||null;
+ assert.equal(focused,null);
+ // The dashboard must pass null (not an empty unit string) to its sample shift ribbon.
+ assert.equal(focused?.unit_number??null,null);
 });
