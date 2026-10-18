@@ -19,6 +19,7 @@ const required=[
  'P10_DRIVER_A_EMAIL','P10_DRIVER_A_PASSWORD',
  'P10_DISPATCHER_B_EMAIL','P10_DISPATCHER_B_PASSWORD',
  'P10_OOS_VEHICLE_ID','P10_DRIVER_A_DVIR_ID','P10_OTHER_DRIVER_DVIR_ID',
+ 'P10_ORG_B_DVIR_ID',
 ];
 const missing=required.filter(k=>!env[k]?.trim());
 if(missing.length) {
@@ -126,12 +127,15 @@ async function run(){
   const dispatcherForeign=await query(dispatcherA,'at_vehicle_dvir_reports',env.P10_ORG_B);
   verify(dispatcherForeign.length===0,'dispatcher sees no foreign-organization DVIRs');
   const ownBReports=await query(dispatcherB,'at_vehicle_dvir_reports',env.P10_ORG_B);
-  verify(Array.isArray(ownBReports),'dispatcher B authenticated read succeeds');
+  verify(ownBReports.some(x=>x.id===env.P10_ORG_B_DVIR_ID),
+   'dispatcher B sees its explicit cross-tenant control DVIR');
 
   console.log('PASS: '+passed+' authenticated staging assertions; no operational writes performed.');
  }catch(_error){
-  // Deliberately suppress potentially sensitive Auth/network exception contents.
-  console.error('FAIL: authenticated staging QA stopped. Inspect test labels and staging identities; do not log tokens or passwords.');
+  // Log only trusted fixed assertion labels, never Auth/network response bodies.
+  const safeLabel=String(_error?.message||'').startsWith('FAILED: ')
+   ?_error.message:'FAIL: authenticated staging QA stopped';
+  console.error(safeLabel+'. Inspect staging roles/fixtures; do not log tokens or passwords.');
   process.exitCode=1;
  }finally {
   for(const c of clients) { try{await c.auth.signOut();}catch {/*No persistent session*/} }
