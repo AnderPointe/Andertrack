@@ -7,6 +7,7 @@ import {
  Wrench,X,Play,Pause,RotateCcw,
 } from 'lucide-react';
 import Vehicle3D from './Vehicle3D.jsx';
+import ClassCMapPanel from './ClassCMapPanel.jsx';
 import {
  NORTHVALE_TABS,NORTHVALE_DEMO,NORTHVALE_DEMO_VEHICLES,
  NORTHVALE_DEMO_SCHEDULE,NORTHVALE_DEMO_ALERTS,NORTHVALE_DEMO_WEEK,
@@ -380,16 +381,24 @@ function AnalyticsTab({isDemo,vehicles,counts}) {
  </div>;
 }
 /** Reusable local-driver ribbon at top of Driver Cockpit. No server mutation. */
-export function ClassCShiftRibbon({isDemo=false,role='',currentUserId='',vehicles=[],assignments=[],drivers=[],demoUnit=''}) {
+export function ClassCShiftRibbon({isDemo=false,role='',currentUserId='',vehicles=[],assignments=[],drivers=[],locations=[],demoUnit=''}) {
  const [dvirUnit,setDvirUnit]=useState(null);
+ const [showMap,setShowMap]=useState(false);
  return <><ShiftBar isDemo={isDemo} role={role} currentUserId={currentUserId}
    vehicles={vehicles} assignments={assignments} drivers={drivers} demoUnit={demoUnit}
    openDvir={setDvirUnit}/>
+ <button type="button" className="at-nv-primary" style={{justifySelf:'start'}}
+   onClick={()=>setShowMap(v=>!v)} aria-expanded={showMap}>
+   <MapPinned size={15}/>{showMap?'Hide my local delivery map':'Show my local delivery map'}
+ </button>
+ {showMap&&<ClassCMapPanel isDemo={isDemo} role={role}
+   currentUserId={currentUserId} vehicles={vehicles}
+   assignments={assignments} locations={locations} mode="driver"/>}
  {dvirUnit!==null&&<DvirModal unit={dvirUnit} driverId={currentUserId}
    isDemo={isDemo} close={()=>setDvirUnit(null)}/>}</>;
 }
 export default function ClassCOpsDashboard({
- isDemo=false,role='',currentUserId='',vehicles=[],drivers=[],assignments=[],
+ isDemo=false,role='',currentUserId='',vehicles=[],drivers=[],assignments=[],locations=[],
  onOpenDispatch=()=>{},
 }){
  const [tab,setTab]=useState('dashboard');
@@ -431,6 +440,10 @@ export default function ClassCOpsDashboard({
   <p className="at-nv-source-notice"><ShieldCheck size={15}/>{isDemo?
     'DEMO ONLY: all Northvale numbers, fault alerts, service appointments, cost forecasts, vehicle identities and earnings below are fictional.' :
     'LIVE SOURCE: vehicle inventory and authorized assignments only. Maintenance, physical weight, payroll and diagnostic scores are not connected.'}</p>
+  {tab==='dashboard'&&<ClassCMapPanel
+    isDemo={isDemo} role={role} currentUserId={currentUserId}
+    vehicles={vehicles} assignments={assignments} locations={locations}
+    mode={role==='driver'&&!isDemo?'driver':'fleet'}/>}
   {tab==='dashboard'&&<DashboardTab vehicles={displayVehicles} assignments={records.assignments}
     counts={counts} isDemo={isDemo} onService={()=>setTab('service')} onDetails={onDetails}/>}
   {tab==='vehicles'&&<VehiclesTab vehicles={displayVehicles} isDemo={isDemo}
