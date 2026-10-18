@@ -14,6 +14,11 @@ BEGIN
  END IF;
 END $guard$;
 
+-- Keep the lock-path check efficient as DVIR records accumulate.
+CREATE INDEX IF NOT EXISTS at_dvir_open_oos_dispatch_idx
+ ON public.at_vehicle_dvir_reports(organization_id,vehicle_id)
+ WHERE severity='out-of-service' AND status<>'closed';
+
 -- Private function schema is not exposed as a Supabase Data API endpoint.
 CREATE SCHEMA IF NOT EXISTS at_internal;
 REVOKE ALL ON SCHEMA at_internal FROM PUBLIC,anon,authenticated;
