@@ -14,22 +14,22 @@ export const SAFETY_REASONS=Object.freeze({
 });
 export function normalizeSafetySnapshot(rows,organizationId,checkedAt=Date.now()) {
   if(!organizationId || !Array.isArray(rows)) return {
-    state:SAFETY_SNAPSHOT_STATE.UNAVAILABLE,organizationId,holds:[],checkedAt:null,
+    state:SAFETY_SNAPSHOT_STATE.UNAVAILABLE,organizationId,holds:[],coveredVehicleIds:[],checkedAt:null,
   };
   const holds=[];
   const seen=new Set();
   for(const row of rows) {
     if(!row?.vehicle_id || seen.has(row.vehicle_id)) return {
-      state:SAFETY_SNAPSHOT_STATE.UNAVAILABLE,organizationId,holds:[],checkedAt:null,
+      state:SAFETY_SNAPSHOT_STATE.UNAVAILABLE,organizationId,holds:[],coveredVehicleIds:[],checkedAt:null,
     };
     seen.add(row.vehicle_id);
     const count=Number(row.open_out_of_service);
     if(!Number.isSafeInteger(count)||count<0)return {
-      state:SAFETY_SNAPSHOT_STATE.UNAVAILABLE,organizationId,holds:[],checkedAt:null,
+      state:SAFETY_SNAPSHOT_STATE.UNAVAILABLE,organizationId,holds:[],coveredVehicleIds:[],checkedAt:null,
     };
     if(count>0)holds.push(row.vehicle_id);
   }
-  return {state:SAFETY_SNAPSHOT_STATE.READY,organizationId,holds,checkedAt};
+  return {state:SAFETY_SNAPSHOT_STATE.READY,organizationId,holds,coveredVehicleIds:[...seen],checkedAt};
 }
 /**
  * Unverified / expired reads are unknown, never "clear".
@@ -44,7 +44,8 @@ export function screenVehicleSafety(snapshot,vehicleId,{
     now-snapshot.checkedAt>maxAgeMs) {
     return {state:'unknown',eligible:false,reason:SAFETY_REASONS.UNKNOWN};
   }
-  if(!Array.isArray(snapshot.holds))return {
+  if(!Array.isArray(snapshot.holds) || !Array.isArray(snapshot.coveredVehicleIds) ||
+    !snapshot.coveredVehicleIds.includes(vehicleId))return {
     state:'unknown',eligible:false,reason:SAFETY_REASONS.UNKNOWN,
   };
   if(snapshot.holds.includes(vehicleId))return {
