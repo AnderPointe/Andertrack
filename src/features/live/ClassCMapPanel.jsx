@@ -27,7 +27,7 @@ export default function ClassCMapPanel({
   const filtered=all.filter(x=>[x.unit,x.assignment?.reference,x.vehicle?.make,
     x.vehicle?.model].join(' ').toLowerCase().includes(search.trim().toLowerCase()));
   const positions=chosen?[chosen.location]:filtered.map(x=>x.location);
-  const routeUnit=chosen||all[0]||null;
+  const routeUnit=chosen||filtered[0]||null;
   const link=classCDirectionsUrl(routeUnit?.assignment);
   const positionLink=classCPositionUrl(routeUnit?.location);
   return <section className="at-nv-panel at-class-c-map-panel">
@@ -47,7 +47,7 @@ export default function ClassCMapPanel({
     </div>
     <div className="at-class-c-map-layout">
       <div className="at-class-c-map-map-frame">
-        <FleetMap key={selectedId||'all'} locations={positions} theme="light"
+        <FleetMap key={selectedId||'all:'+search} locations={positions} theme="light"
           className="at-class-c-fleet-map"
           onChoose={point=>{
             const matched=all.find(x=>x.location.id===point.id ||
