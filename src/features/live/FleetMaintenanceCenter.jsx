@@ -1,4 +1,4 @@
-import React,{useCallback,useEffect,useMemo,useState} from 'react';
+import React,{useCallback,useEffect,useMemo,useRef,useState} from 'react';
 import {AlertTriangle,CheckCircle2,ClipboardCheck,Clock3,Database,FileText,
  RefreshCw,ShieldCheck,Truck,Wrench} from 'lucide-react';
 import {supabase} from '../../lib/supabase.js';
@@ -13,6 +13,7 @@ export default function FleetMaintenanceCenter({
 }){
  const planner=role==='admin'||role==='dispatcher';
  const [data,setData]=useState({configured:false,reports:[],orders:[],error:''});
+ const requestVersion=useRef(0);
  const [busy,setBusy]=useState(false),[loading,setLoading]=useState(false);
  const [error,setError]=useState(''),[notice,setNotice]=useState('');
  const [vehicleId,setVehicleId]=useState(''),[task,setTask]=useState('');
@@ -24,15 +25,19 @@ export default function FleetMaintenanceCenter({
  const unitLookup=useMemo(()=>new Map(vehicles.map(v=>[v.id,v.unit_number||v.id])),
    [vehicles]);
  const refresh=useCallback(async()=>{
+  const version=++requestVersion.current;
   if(isDemo||!organizationId||!currentUserId)return;
   setLoading(true);
   const fresh=await loadSafetyRecords(supabase,{
    organizationId,driverOnly:!planner,currentUserId,
   });
+  if(version!==requestVersion.current)return;
   setData(fresh);setLoading(false);
  },[organizationId,currentUserId,isDemo,planner]);
  useEffect(()=>{setData({configured:false,reports:[],orders:[],error:''});
-   setError('');setNotice('');refresh();},[refresh]);
+   setError('');setNotice('');refresh();
+   return ()=>{requestVersion.current++;};
+ },[refresh]);
  const orders=data.orders||[],reports=data.reports||[];
  const counts=dvirSummary(reports),workCounts=serviceOrderSummary(orders);
  async function run(fn,success){
