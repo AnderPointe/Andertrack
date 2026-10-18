@@ -78,6 +78,34 @@ export function classCOpsRecords({vehicles=[],assignments=[],drivers=[],role='',
     hasUnverifiedGvwr:filteredVehicles.some(v=>!classCEligibility(v).verified),
   };
 }
+/**
+ * Search already-authorized Class C equipment by unit/model/driver/route.
+ * This never fetches additional data: callers must supply RLS-scoped vehicle,
+ * assignment and driver records, or the explicitly synthetic demo catalog.
+ */
+export function filterClassCFleet(vehicles=[],query='',{
+  drivers=[],assignments=[],isDemo=false,
+}={}) {
+  const needle=String(query||'').trim().toLocaleLowerCase();
+  if(!needle)return vehicles;
+  const driverById=new Map(drivers.map(d=>[d.user_id,d.display_name||'']));
+  const attrsByVehicle=new Map();
+  for(const assignment of assignments) {
+    if(!assignment?.vehicle_id)continue;
+    const list=attrsByVehicle.get(assignment.vehicle_id)||[];
+    list.push([assignment.reference,assignment.customer_name,
+      assignment.pickup_address,assignment.dropoff_address,
+      driverById.get(assignment.driver_user_id)].filter(Boolean).join(' '));
+    attrsByVehicle.set(assignment.vehicle_id,list);
+  }
+  return vehicles.filter(v=>{
+    const recorded=[v.unit_number,v.make,v.model,v.model_year,v.vehicle_type,
+      ...(attrsByVehicle.get(v.id)||[])];
+    if(isDemo)recorded.push(v.demoDriver,v.demoRoute,v.condition);
+    return recorded.some(t=>String(t??'').toLocaleLowerCase().includes(needle));
+  });
+}
+
 export function classCDriverAssignment({assignments=[],vehicles=[],currentUserId=''}={}) {
   const own=assignments.find(a=>a.driver_user_id===currentUserId&&
     ACTIVE_STATUSES.has(a.status)&&a.vehicle_id&&vehicles.some(v=>v.id===a.vehicle_id&&classCEligibility(v).eligible));
