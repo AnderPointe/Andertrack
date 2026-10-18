@@ -203,7 +203,7 @@ function ServiceModal({vehicles,create,cancel,isDemo}) {
  <div className="at-nv-modal-pair"><label>Day<select value={day} onChange={e=>setDay(Number(e.target.value))}>
   {NORTHVALE_DEMO_WEEK.map((d,i)=><option key={i} value={i}>{d}</option>)}</select></label>
  <label>Start time<input type="time" required value={time} onChange={e=>setTime(e.target.value)}/></label></div>
- <label>Workshop <input value={bay} maxLength={60} onChange={e=>setBay(e.target.value)}/></label>
+ <label>Workshop / service bay <input value={bay} maxLength={60} onChange={e=>setBay(e.target.value)}/></label>
  <button disabled={!draft.valid} type="submit" className="at-nv-primary">Add local appointment <Plus size={15}/></button>
  </form></div>;
 }
@@ -300,6 +300,18 @@ function DashboardTab({vehicles,assignments,counts,isDemo,onService,onDetails,
      ['Mechanical alerts','Not connected','bad']]).map(([name,value,tone])=><div key={name}>
        <span>{name}</span><strong>{value}</strong><Status label={tone==='good'?'Ready':tone==='watch'?'Review':'Attention'}
        tone={tone==='bad'?'danger':tone}/></div>)}</div>
+   {isDemo&&<div className="at-nv-quick-fleet" aria-label="Six reference vehicles">
+     {displayed.map(v=><button key={v.id} type="button"
+       className={selected?.id===v.id?'selected':''}
+       onClick={()=>{onSelectVehicle(v);onDetails(v,'vehicles');}}>
+       <span className="at-nv-quick-fleet-unit"><Truck size={16}/><span>
+         <strong>{v.model?.toUpperCase()||'VEHICLE'} · {v.unit_number}</strong>
+         <small>{v.demoDriver||'Sample driver'} · {v.demoRoute||'Sample route'}</small>
+       </span></span>
+       <Status label={v.condition||'Sample'} tone={v.condition==='Active'?'good':
+         v.condition==='Service'?'watch':'danger'}/>
+     </button>)}
+   </div>}
    <SectionTitle title="Fleet Condition" sub={isDemo?'Fictional subsystem averages':'Not connected to ELD/OBD/TPMS'}/>
    {isDemo?NORTHVALE_DEMO.subsystems.slice(0,4).map(s=><div key={s.label} className="at-nv-condition">
     <span>{s.label}</span><div className="at-nv-progress"><i style={{width:Math.min(s.score*10,100)+'%'}}/></div>
