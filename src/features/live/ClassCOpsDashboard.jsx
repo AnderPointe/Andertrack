@@ -8,6 +8,9 @@ import {
 } from 'lucide-react';
 import Vehicle3D from './Vehicle3D.jsx';
 import ClassCMapPanel from './ClassCMapPanel.jsx';
+import FleetMaintenanceCenter from './FleetMaintenanceCenter.jsx';
+import {supabase} from '../../lib/supabase.js';
+import {loadSafetyRecords,submitAuthenticatedDvir,validateDvirSubmission} from '../../lib/fleet-maintenance-api.js';
 import {
   NORTHVALE_REFERENCE_VEHICLES,NORTHVALE_REFERENCE_ALERTS,
   NORTHVALE_REFERENCE_SCHEDULE,NORTHVALE_REFERENCE_FORECAST,northvaleHotspots,
@@ -207,10 +210,22 @@ function ServiceModal({vehicles,create,cancel,isDemo}) {
  <button disabled={!draft.valid} type="submit" className="at-nv-primary">Add local appointment <Plus size={15}/></button>
  </form></div>;
 }
-function DvirModal({unit='',close,driverId,isDemo}) {
- const [defect,setDefect]=useState(''),[severity,setSeverity]=useState('needs-review'),
-  [note,setNote]=useState(''),[result,setResult]=useState(null);
+function DvirModal({unit='',close,driverId,isDemo,role='',organizationId='',
+ assignmentId='',vehicleId=''}) {
+ const [defect,setDefect]=useState(''),[severity,setSeverity]=useState('needs-review');
+ const [note,setNote]=useState(''),[result,setResult]=useState('');
+ const [attested,setAttested]=useState(false),[connected,setConnected]=useState(false);
+ const [sending,setSending]=useState(false),[submitError,setSubmitError]=useState('');
  const draft=classCDvirDraft({unit,driverId,defect,severity,note});
+ const canSubmit=!isDemo&&role==='driver'&&Boolean(organizationId&&vehicleId&&assignmentId);
+ useEffect(()=>{
+   let active=true;
+   if(!canSubmit){setConnected(false);return undefined;}
+   loadSafetyRecords(supabase,{
+     organizationId,driverOnly:true,currentUserId:driverId,
+   }).then(status=>{if(active)setConnected(status.configured);});
+   return ()=>{active=false;};
+ },[canSubmit,organizationId,driverId]);
  const download=()=>{
   const body=JSON.stringify({...draft,createdAt:new Date().toISOString()},null,2);
   const blob=new Blob([body],{type:'application/json'});
@@ -218,14 +233,30 @@ function DvirModal({unit='',close,driverId,isDemo}) {
   a.href=uri;a.download='andertrack-dvir-DRAFT-'+Date.now()+'.json';a.click();
   URL.revokeObjectURL(uri);setResult('Draft exported to this device. Not submitted to dispatch or maintenance.');
  };
+ async function submitToFleet(){
+   if(!canSubmit||!connected||!attested)return;
+   const payload={organizationId,vehicleId,assignmentId,
+     defectType:defect,severity,notes:note,attested};
+   const check=validateDvirSubmission(payload);
+   if(!check.valid){setSubmitError(check.error);return;}
+   setSending(true);setSubmitError('');setResult('');
+   try{
+     const createdId=await submitAuthenticatedDvir(supabase,payload);
+     setResult('Fleet record submitted and acknowledged by the server. Reference: '+createdId+
+       '. Notify dispatch directly for urgent safety issues.');
+   }catch(error){setSubmitError(error?.message||'Fleet submission failed. No record was confirmed.');}
+   finally{setSending(false);}
+ }
  return <div className="at-nv-modal" onMouseDown={e=>{if(e.target===e.currentTarget)close();}}>
- <form className="at-nv-modal-card" role="dialog" aria-modal="true" aria-label="DVIR defect report draft"
+ <form className="at-nv-modal-card" role="dialog" aria-modal="true" aria-label="DVIR defect report"
  onSubmit={e=>{e.preventDefault();if(draft.valid)download();}}>
  <div className="at-nv-section-title"><h3>DVIR defect reporting</h3>
  <button type="button" onClick={close} aria-label="Close defect report"><X size={18}/></button></div>
  <div className="at-nv-alert"><ShieldAlert size={16}/>
-  DVIR backend is not connected. This form saves a local draft, not a submitted or legally valid inspection report.
-  Report safety-critical defects through your existing company procedures immediately.</div>
+  {canSubmit&&connected?
+   'Authenticated defect submission is available; submission does not certify roadworthiness or release equipment.':
+   'Export a local draft only. Fleet submission is unavailable until the reviewed safety backend is enabled.'}
+  Report safety-critical defects through existing company procedures immediately.</div>
  <label>Vehicle unit<input readOnly value={unit||'No current equipment'}/></label>
  <label>Defect category <select required value={defect} onChange={e=>setDefect(e.target.value)}>
   <option value="">Choose a defect</option><option value="Brake system">Brake system</option>
@@ -239,7 +270,15 @@ function DvirModal({unit='',close,driverId,isDemo}) {
  <label>Defect description<textarea rows={3} maxLength={500} value={note}
   onChange={e=>setNote(e.target.value)} placeholder="Describe location, symptom, and severity"/></label>
  <button disabled={!draft.valid} className="at-nv-primary" type="submit">
- <Download size={16}/> Export unsubmitted DVIR draft</button>
+   <Download size={16}/> Export unsubmitted DVIR draft</button>
+ {canSubmit&&connected&&<><label className="at-nv-dvir-confirm">
+    <input type="checkbox" checked={attested} onChange={e=>setAttested(e.target.checked)}/>
+    I personally observed this condition on my assigned vehicle. This is a defect report,
+    not a certified DVIR signature or inspection clearance.</label>
+   <button type="button" className="at-nv-primary" onClick={submitToFleet}
+     disabled={!draft.valid||!attested||sending}>
+     <ClipboardCheck size={16}/>{sending?'Submitting…':'Submit defect to fleet database'}</button></>}
+ {submitError&&<p role="alert" className="at-nv-alert">{submitError}</p>}
  {result&&<p className="at-nv-confirm" role="status">{result}</p>}
  </form></div>;
 }
