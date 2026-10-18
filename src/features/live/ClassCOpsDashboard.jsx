@@ -242,7 +242,7 @@ function DvirModal({unit='',close,driverId,isDemo,role='',organizationId='',
    setSending(true);setSubmitError('');setResult('');
    try{
      const createdId=await submitAuthenticatedDvir(supabase,payload);
-     setResult('Fleet record submitted and acknowledged by the server. Reference: '+createdId+
+     setResult('Defect report saved by the server and awaiting dispatcher review. Reference: '+createdId+
        '. Notify dispatch directly for urgent safety issues.');
    }catch(error){setSubmitError(error?.message||'Fleet submission failed. No record was confirmed.');}
    finally{setSending(false);}
