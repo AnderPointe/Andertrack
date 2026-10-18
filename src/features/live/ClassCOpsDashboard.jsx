@@ -19,7 +19,7 @@ import {
  NORTHVALE_TABS,NORTHVALE_DEMO,NORTHVALE_DEMO_VEHICLES,
  NORTHVALE_DEMO_SCHEDULE,NORTHVALE_DEMO_ALERTS,NORTHVALE_DEMO_WEEK,
  NORTHVALE_DEMO_COSTS,classCEligibility,classCOpsRecords,
- classCDriverAssignment,classCShiftElapsed,classCStops,classCServiceDraft,
+ classCDriverAssignment,classCShiftElapsed,classCStops,classCServiceDraft,filterClassCFleet,
  classCDvirDraft,classCCostBreakdown,
 } from '../../lib/class-c-operations.js';
 import {VEHICLE_FORMS,vehicleDisplay} from '../../lib/vehicle-3d.js';
@@ -158,11 +158,13 @@ function ShiftBar({isDemo=false,role='',currentUserId='',records,vehicles,assign
    [start,setStart]=useState(null),[base,setBase]=useState(0),[now,setNow]=useState(Date.now());
  useEffect(()=>{const interval=window.setInterval(()=>setNow(Date.now()),15000);
     return ()=>window.clearInterval(interval);},[]);
- const chosen=isDemo?{vehicle:{...NORTHVALE_DEMO_VEHICLES[1],unit_number:demoUnit||NORTHVALE_DEMO_VEHICLES[1].unit_number},assignment:{id:'nv-demo-load'}}:
+ const demoSelected=NORTHVALE_REFERENCE_VEHICLES.find(v=>v.unit_number===demoUnit)||
+   NORTHVALE_REFERENCE_VEHICLES.find(v=>v.unit_number==='VAN-021')||NORTHVALE_DEMO_VEHICLES[1];
+ const chosen=isDemo?{vehicle:demoSelected,assignment:{id:'nv-demo-load'}}:
    classCDriverAssignment({assignments,vehicles,currentUserId});
  const sampleOffset=isDemo?DEMO_SHIFT.startOffsetMinutes:0;
  const minutes=sampleOffset+base+(running?classCShiftElapsed(start,now):0);
- const stops=isDemo?DEMO_SHIFT.stops:classCStops(assignments,currentUserId).length;
+ const stops=isDemo?(demoSelected.demoStops?.join(' / ')||DEMO_SHIFT.stops):classCStops(assignments,currentUserId).length;
  const eligibleDriver=isDemo||(driver&&drivers.some(d=>d.user_id===currentUserId&&
    d.license_class==='C'));
  if(!eligibleDriver)return null;
@@ -174,15 +176,15 @@ function ShiftBar({isDemo=false,role='',currentUserId='',records,vehicles,assign
     {expanded?'Collapse':'Expand'} <ChevronDown size={15}/></button></div>
  {expanded&&<div className="at-nv-shift-metrics">
   <div><small>Assigned unit</small><strong>{chosen.vehicle?.unit_number||'Not assigned'}</strong>
-    <span>{chosen.vehicle?'Class C category · GVWR review':'No current Class C vehicle'}</span></div>
+    <span>{isDemo?(demoSelected.demoDriver+' · '+demoSelected.demoRoute):chosen.vehicle?'Class C category · GVWR review':'No current Class C vehicle'}</span></div>
   <div><small>{isDemo?'Sample time':'Local session timer'}</small><strong>{clock(minutes)}</strong>
     <button type="button" onClick={run} className="at-nv-shift-timer">{running?<Pause size={12}/>:<Play size={12}/>}
       {running?'Pause':'Start'}</button></div>
   <div><small>Delivery stops</small><strong>{stops}</strong><span>
     {isDemo?'Sample stops':'Visible assigned Class C loads, not stop-level records'}</span></div>
   <div><small>Daily earnings + tips</small><strong>{isDemo?
-    money(DEMO_SHIFT.earnings+DEMO_SHIFT.tips):'Not connected'}</strong>
-    <span>{isDemo?'$185 base · $32 tips (sample)':'Payroll and gratuity feed required'}</span></div>
+    money(demoSelected.demoPay??(DEMO_SHIFT.earnings+DEMO_SHIFT.tips)):'Not connected'}</strong>
+    <span>{isDemo?'Fictional sample total · not actual pay':'Payroll and gratuity feed required'}</span></div>
   <button type="button" className="at-nv-dvir-button" onClick={()=>openDvir(chosen.vehicle?.unit_number||'')}>
     <ClipboardCheck size={19}/> Report DVIR defect</button></div>}
  <p className="at-nv-shift-foot">Local session timer is not a certified ELD or persistent timesheet.
@@ -509,6 +511,7 @@ export default function ClassCOpsDashboard({
  onOpenDispatch=()=>{},
 }){
  const [tab,setTab]=useState('dashboard');
+ const [fleetQuery,setFleetQuery]=useState('');
  const [showService,setShowService]=useState(false),[dvirUnit,setDvirUnit]=useState(null),
   [localServices,setLocalServices]=useState([]),[notice,setNotice]=useState('');
  const ownActive=classCDriverAssignment({assignments,vehicles,currentUserId});
@@ -516,9 +519,13 @@ export default function ClassCOpsDashboard({
    [vehicles,assignments,drivers,role,currentUserId,isDemo]);
  const displayVehicles=isDemo?NORTHVALE_REFERENCE_VEHICLES:records.vehicles;
  const counts=isDemo?NORTHVALE_DEMO.summary:records.counts;
+ const visibleVehicles=useMemo(()=>filterClassCFleet(displayVehicles,fleetQuery,{
+   drivers:records.drivers,assignments:records.assignments,isDemo,
+ }),[displayVehicles,fleetQuery,records.drivers,records.assignments,isDemo]);
  const canFleet=isDemo||role==='admin'||role==='dispatcher';
  const isClassCDriver=role==='driver'&&drivers.some(d=>d.user_id===currentUserId&&d.license_class==='C');
  const [detailUnit,setDetailUnit]=useState(null);
+ const focusedUnit=visibleVehicles.find(v=>v.id===detailUnit?.id)||visibleVehicles[0]||null;
  const localScheduled=isDemo?[...NORTHVALE_REFERENCE_SCHEDULE,...localServices]:localServices;
  if(!canFleet&&!isClassCDriver)return <div className="at-nv"><Unconnected
    title="Class C operations access restricted" detail="This workspace is available to authorized fleet staff and their signed-in Class C drivers."/></div>;
@@ -532,11 +539,23 @@ export default function ClassCOpsDashboard({
   <header className="at-nv-header">
    <div className="at-nv-brand"><span><Truck size={24}/></span><div><small>ANDERTRACK / CLASS C OPERATIONS</small>
      <h2>Local Fleet Command</h2><p>Cargo vans · Sprinters · light box trucks · pickups & utility fleets</p></div></div>
-   <div className="at-nv-header-actions"><span className="at-nv-mode"><i/>{isDemo?'NORTHVALE-INSPIRED DEMO':'AUTHORIZED LIVE RECORDS'}</span>
+   <div className="at-nv-header-actions">
+    <label className="at-nv-header-search"><Search size={15}/>
+      <input value={fleetQuery} onChange={e=>setFleetQuery(e.target.value)}
+       aria-label="Search Class C units, drivers or routes"
+       placeholder="Search unit, driver or route…"/>
+      {fleetQuery&&<button type="button" aria-label="Clear fleet search"
+        onClick={()=>setFleetQuery('')}><X size={14}/></button>}
+    </label>
+    <button className="at-nv-alert-shortcut" type="button" onClick={()=>setTab('vehicles')}
+      aria-label="Open vehicle health and recent alerts"><Bell size={17}/> Alerts</button>
+    <span className="at-nv-mode"><i/>{isDemo?'NORTHVALE-INSPIRED DEMO':'AUTHORIZED LIVE RECORDS'}</span>
     <button className="at-nv-primary" type="button" onClick={onOpenDispatch}>Dispatch workspace <ArrowRight size={14}/></button></div>
   </header>
   <ShiftBar isDemo={isDemo} role={role} currentUserId={currentUserId}
-    records={records} vehicles={vehicles} assignments={assignments} drivers={drivers} openDvir={setDvirUnit}/>
+    records={records} vehicles={vehicles} assignments={assignments} drivers={drivers}
+    demoUnit={isDemo?focusedUnit?.unit_number||'':''}
+    openDvir={setDvirUnit}/>
   {records.hasUnverifiedGvwr&&!isDemo&&<div className="at-nv-alert"><ShieldAlert size={16}/>
     Some vehicle GVWR values have not been verified. Category selection alone does not establish non-CDL eligibility.</div>}
   <nav className="at-nv-tabs" aria-label="Local Class C fleet workspace">
@@ -545,6 +564,10 @@ export default function ClassCOpsDashboard({
       {i===0?<LayoutDashboard size={17}/>:i===1?<Truck size={17}/>:i===2?<Wrench size={17}/>:<Activity size={17}/>}
       {x.label}</button>)}
   </nav>
+  {fleetQuery&&<p className="at-nv-search-summary" role="status">
+    Showing {visibleVehicles.length} of {displayVehicles.length} authorized Class C units
+    matching “{fleetQuery}”. This filter affects vehicle displays; it does not hide maintenance or safety reports.
+  </p>}
   <p className="at-nv-source-notice"><ShieldCheck size={15}/>{isDemo?
     'DEMO ONLY: all Northvale numbers, fault alerts, service appointments, cost forecasts, vehicle identities and earnings below are fictional.' :
     'LIVE SOURCE: vehicle inventory and authorized assignments only. Maintenance, physical weight, payroll and diagnostic scores are not connected.'}</p>
@@ -552,11 +575,11 @@ export default function ClassCOpsDashboard({
     isDemo={isDemo} role={role} currentUserId={currentUserId}
     vehicles={vehicles} assignments={assignments} locations={locations}
     mode={role==='driver'&&!isDemo?'driver':'fleet'}/>}
-  {tab==='dashboard'&&<DashboardTab vehicles={displayVehicles} assignments={records.assignments}
+  {tab==='dashboard'&&<DashboardTab vehicles={visibleVehicles} assignments={records.assignments}
     counts={counts} isDemo={isDemo} onService={()=>setTab('service')}
     onDetails={onDetails} schedule={localScheduled}
     selectedUnitId={detailUnit?.id||''} onSelectVehicle={setDetailUnit}/>}
-  {tab==='vehicles'&&<VehiclesTab vehicles={displayVehicles} isDemo={isDemo}
+  {tab==='vehicles'&&<VehiclesTab vehicles={visibleVehicles} isDemo={isDemo}
     alerts={isDemo?NORTHVALE_REFERENCE_ALERTS:[]}
     focusId={detailUnit?.id||''} onSelectVehicle={setDetailUnit}/>}
   {tab==='service'&&<ServiceTab vehicles={displayVehicles} isDemo={isDemo}
@@ -565,7 +588,7 @@ export default function ClassCOpsDashboard({
   {tab==='service'&&!isDemo&&<FleetMaintenanceCenter
     organizationId={organizationId} role={role} currentUserId={currentUserId}
     vehicles={records.vehicles}/>}
-  {tab==='analytics'&&<AnalyticsTab isDemo={isDemo} vehicles={displayVehicles} counts={counts}
+  {tab==='analytics'&&<AnalyticsTab isDemo={isDemo} vehicles={visibleVehicles} counts={counts}
     selectedUnitId={detailUnit?.id||''} onSelectVehicle={setDetailUnit}/>}
   {notice&&<div className="at-nv-flash" role="status">{notice}
     <button onClick={()=>setNotice('')} aria-label="Dismiss notice"><X size={14}/></button></div>}
