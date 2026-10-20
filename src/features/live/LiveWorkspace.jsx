@@ -5,6 +5,8 @@ import AssignmentActions from './AssignmentActions.jsx';
 import DispatchRequestQueue from './DispatchRequestQueue.jsx';
 import OpsCommandCenter from './OpsCommandCenter.jsx';
 import LoginExperience from './LoginExperience.jsx';
+import useEldTelemetry from './useEldTelemetry.js';
+import {telemetryLocations} from '../../lib/eld-telemetry.js';
 
 function Label({ children, tone = '' }) {
   return <span className={`pill ${tone}`}>{children}</span>;
@@ -115,6 +117,10 @@ export default function LiveWorkspace({ onDemo }) {
   const role = membership?.role || '';
   const isPlanner = role === 'admin' || role === 'dispatcher';
 
+  const telemetryTicks = useEldTelemetry(supabase, organizationId, userId, isPlanner, session?.access_token);
+  const liveLocations = useMemo(() => telemetryLocations({ticks: telemetryTicks, vehicles, assignments, organizationId, locations}),
+    [telemetryTicks, vehicles, assignments, organizationId, locations]);
+
   const reload = useCallback(async () => {
     if (!supabase || !userId || !organizationId || !role) return;
     setLoading(true);
@@ -215,7 +221,7 @@ export default function LiveWorkspace({ onDemo }) {
   return <OpsCommandCenter
     session={session} memberships={memberships} membershipLoaded={membershipLoaded} organizationId={organizationId} setOrganizationId={setOrganizationId}
     role={role} profile={profile} assignments={assignments} dispatchRequests={dispatchRequests}
-    drivers={drivers} vehicles={vehicles} locations={locations} loading={loading} error={error}
+    drivers={drivers} vehicles={vehicles} locations={liveLocations} loading={loading} error={error}
     sync={sync} reload={reload} onDemo={onDemo}
     onSignOut={() => supabase.auth.signOut({scope:'global'})}/>;
 }
