@@ -53,9 +53,10 @@ begin
   ) select p_organization_id, v.id, t.truck_id, t.current_speed_kmh, t.fuel_level_pct,
     t.odometer_km, t.longitude, t.latitude, t.altitude_m,
     extensions.st_setsrid(extensions.st_makepoint(t.longitude,t.latitude,t.altitude_m),4326), t.updated_at
-  from jsonb_to_recordset(p_ticks) as t(truck_id text, current_speed_kmh double precision,
+  from (select distinct on (truck_id) * from jsonb_to_recordset(p_ticks) as records(truck_id text, current_speed_kmh double precision,
     fuel_level_pct double precision, odometer_km double precision, longitude double precision,
     latitude double precision, altitude_m double precision, updated_at timestamptz)
+    order by truck_id, updated_at desc) t
   join public.at_vehicles v on v.organization_id = p_organization_id and v.unit_number = t.truck_id
   on conflict (organization_id, vehicle_id) do update set
     current_speed_kmh = excluded.current_speed_kmh, fuel_level_pct = excluded.fuel_level_pct,

@@ -1,0 +1,170 @@
+# One trusted organization per Vector instance. Secrets supplied by host, not Git.
+data_dir = "/var/lib/vector"
+
+[sources.eld_telemetry_in]
+type = "http_server"
+address = "0.0.0.0:8080"
+path = "/telemetry"
+strict_path = true
+decoding.codec = "json"
+framing.method = "bytes"
+[sources.eld_telemetry_in.auth]
+strategy = "basic"
+username = "telemetry"
+password = "${TELEMETRY_INGEST_TOKEN}"
+
+[transforms.enrich_telemetry]
+type = "remap"
+inputs = ["eld_telemetry_in"]
+drop_on_error = true
+drop_on_abort = true
+source = '''
+truck = string!(.truck_id)
+assert!(match(truck, r'^[A-Za-z0-9_-]{1,80}$'), "Invalid truck_id")
+assert!(is_float(.speed_kmh) || is_integer(.speed_kmh), "Numeric speed required")
+assert!(is_float(.fuel_pct) || is_integer(.fuel_pct), "Numeric fuel required")
+assert!(is_float(.odometer_km) || is_integer(.odometer_km), "Numeric odometer required")
+assert!(is_float(.lon) || is_integer(.lon), "Numeric longitude required")
+assert!(is_float(.lat) || is_integer(.lat), "Numeric latitude required")
+speed = to_float!(.speed_kmh)
+fuel = to_float!(.fuel_pct)
+odometer = to_float!(.odometer_km)
+lon = to_float!(.lon)
+lat = to_float!(.lat)
+alt = 0.0
+if exists(.alt) && .alt != null {
+  assert!(is_float(.alt) || is_integer(.alt), "Numeric altitude required")
+  alt = to_float!(.alt)
+}
+assert!(speed >= 0 && speed <= 300, "Speed out of range")
+assert!(fuel >= 0 && fuel <= 100, "Fuel out of range")
+assert!(odometer >= 0 && odometer <= 1000000000, "Odometer out of range")
+assert!(lon >= -180 && lon <= 180 && lat >= -90 && lat <= 90, "Invalid coordinates")
+assert!(alt >= -12000 && alt <= 100000, "Altitude out of range")
+org = get_env_var!("TELEMETRY_ORGANIZATION_ID")
+assert!(match(org, r'^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'), "Invalid organization UUID")
+. = {
+  "organization_id": org, "truck_id": truck,
+  "current_speed_kmh": speed, "fuel_level_pct": fuel, "odometer_km": odometer,
+  "longitude": lon, "latitude": lat, "altitude_m": alt,
+  "point_wkt": "SRID=4326;POINT Z (" + to_string(lon) + " " + to_string(lat) + " " + to_string(alt) + ")",
+  "updated_at": now()
+}
+'''
+
+[transforms.broadcast_envelope]
+type = "remap"
+inputs = ["enrich_telemetry"]
+drop_on_error = true
+source = '''
+topic = "telemetry:" + string!(.organization_id)
+. = {"messages": [{"topic": topic, "event": "telemetry", "private": true, "payload": .}]}
+'''
+
+[sinks.supabase_realtime_broadcast]
+type = "http"
+inputs = ["broadcast_envelope"]
+uri = "${SUPABASE_URL}/realtime/v1/api/broadcast"
+method = "post"
+encoding.codec = "json"
+framing.method = "bytes"
+batch.max_events = 1
+batch.timeout_secs = 1
+healthcheck.enabled = false
+buffer.type = "memory"
+buffer.max_events = 1000
+buffer.when_full = "block"
+request.concurrency = 1
+[sinks.supabase_realtime_broadcast.request.headers]
+apikey = "${SUPABASE_SERVICE_ROLE_KEY}"
+Authorization = "Bearer ${SUPABASE_SERVICE_ROLE_KEY}"
+Content-Type = "application/json"
+
+[sinks.supabase_postgres_upsert]
+type = "http"
+inputs = ["enrich_telemetry"]
+uri = "${SUPABASE_URL}/rest/v1/rpc/at_ingest_vehicle_telemetry"
+method = "post"
+encoding.codec = "json"
+framing.method = "character_delimited"
+framing.character_delimited.delimiter = ","
+payload_prefix = '{"p_organization_id":"${TELEMETRY_ORGANIZATION_ID}","p_ticks":['
+payload_suffix = ']}'
+batch.max_events = 50
+batch.timeout_secs = 10
+healthcheck.enabled = false
+buffer.type = "disk"
+buffer.max_size = 536870912
+buffer.when_full = "block"
+request.concurrency = 1
+[sinks.supabase_postgres_upsert.request.headers]
+apikey = "${SUPABASE_SERVICE_ROLE_KEY}"
+Authorization = "Bearer ${SUPABASE_SERVICE_ROLE_KEY}"
+Content-Type = "application/json"
+
+[[tests]]
+name = "normalizes numeric telemetry and builds a private envelope"
+[[tests.inputs]]
+insert_at = "enrich_telemetry"
+type = "log"
+log_fields = {truck_id = "TRK-018", speed_kmh = 72.5, fuel_pct = 64, odometer_km = 183420.2, lon = -74.0, lat = 40.7}
+[[tests.outputs]]
+extract_from = "enrich_telemetry"
+[[tests.outputs.conditions]]
+type = "vrl"
+source = '''
+assert_eq!(.truck_id, "TRK-018")
+assert_eq!(.current_speed_kmh, 72.5)
+assert_eq!(.altitude_m, 0.0)
+assert_eq!(.organization_id, get_env_var!("TELEMETRY_ORGANIZATION_ID"))
+assert!(!exists(.driver_id))
+'''
+[[tests.outputs]]
+extract_from = "broadcast_envelope"
+[[tests.outputs.conditions]]
+type = "vrl"
+source = '''
+assert_eq!(.messages[0].private, true)
+assert_eq!(.messages[0].event, "telemetry")
+assert_eq!(.messages[0].payload.truck_id, "TRK-018")
+'''
+
+[[tests]]
+name = "drops invalid coordinates"
+no_outputs_from = ["enrich_telemetry", "broadcast_envelope"]
+[[tests.inputs]]
+insert_at = "enrich_telemetry"
+type = "log"
+log_fields = {truck_id = "TRK-018", speed_kmh = 72, fuel_pct = 64, odometer_km = 183420, lon = -74, lat = 91}
+
+[[tests]]
+name = "drops numeric strings rather than silently coercing"
+no_outputs_from = ["enrich_telemetry", "broadcast_envelope"]
+[[tests.inputs]]
+insert_at = "enrich_telemetry"
+type = "log"
+log_fields = {truck_id = "TRK-018", speed_kmh = "72", fuel_pct = 64, odometer_km = 183420, lon = -74, lat = 40}
+
+[[tests]]
+name = "drops missing required measurements"
+no_outputs_from = ["enrich_telemetry", "broadcast_envelope"]
+[[tests.inputs]]
+insert_at = "enrich_telemetry"
+type = "log"
+log_fields = {truck_id = "TRK-018", speed_kmh = 72, odometer_km = 183420, lon = -74, lat = 40}
+
+[[tests]]
+name = "does not trust device organization driver or timestamps"
+[[tests.inputs]]
+insert_at = "enrich_telemetry"
+type = "log"
+log_fields = {truck_id = "TRK-018", speed_kmh = 72, fuel_pct = 64, odometer_km = 183420, lon = -74, lat = 40, organization_id = "foreign", driver_id = "spoof", updated_at = "2020-01-01"}
+[[tests.outputs]]
+extract_from = "enrich_telemetry"
+[[tests.outputs.conditions]]
+type = "vrl"
+source = '''
+assert_eq!(.organization_id, get_env_var!("TELEMETRY_ORGANIZATION_ID"))
+assert!(!exists(.driver_id))
+assert!(is_timestamp(.updated_at))
+'''

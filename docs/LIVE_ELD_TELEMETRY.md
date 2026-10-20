@@ -1,84 +1,95 @@
-# Live ELD telemetry
+# Live ELD telemetry with Vector
 
-This implements the supplied HTTP → sanitize → private Broadcast + 10-second
-state-upsert pipeline using a dependency-free Node 22 collector rather than
-pasting the Vector configuration unchanged. Andertrack uses `at_vehicles` with
-organization-scoped `unit_number` values, not a global `vehicles.truck_id` table.
-The collector sends proper Broadcast `messages` envelopes and batches to an RPC
-that resolves existing inventory and builds PostGIS PointZ geometry. It never
-creates vehicles or overwrites driver GPS tables.
+`services/telemetry/vector.toml` replaces the Node collector. It uses Vector
+0.49.0, authenticated HTTP ingress, strict numeric/range checks, private Supabase
+Broadcast envelopes, and a batched PostGIS ingestion RPC matching Andertrack's
+existing organization-scoped `at_vehicles` inventory. It does not write a generic
+`vehicles` table or overwrite driver GPS tables.
 
-## Deployment (not performed by this PR)
+## Activation (not performed)
 
-1. Review `supabase/sql/live_eld_telemetry_review.sql` and apply in **staging**.
-   It expects the existing tenant schema and PostGIS in the `extensions` schema.
-   If PostGIS is installed elsewhere, adjust the qualified type/functions first.
-   This review script is one-time, not an automatically applied migration.
-2. Review all existing policies on `realtime.messages`: permissive policies OR
-   together, so remove any broad policies that bypass the fleet membership rule.
+1. Review and apply `supabase/sql/live_eld_telemetry_review.sql` in **staging**.
+   The one-time review script expects tenant tables and PostGIS in `extensions`.
+   Adapt qualified types/functions if PostGIS is installed elsewhere. Validate
+   PointZ persistence, duplicate truck keys in a batch, and older-write rejection.
+2. Audit existing `realtime.messages` policies: permissive policies OR together.
+   Remove broad policies allowing telemetry reads or client-spoofed broadcasts.
    In Supabase Dashboard → Project → Realtime → Settings disable **Allow public
-   access**. Verify existing channels before changing that project-wide setting.
-   Verify another tenant, drivers and anonymous clients cannot read telemetry or
-   join its channel; planners may read their own organization only. Authenticated
-   clients must not have an INSERT policy permitting spoofed telemetry broadcasts.
-3. Run the collector on an always-on container/VM, **not as a Vercel function**.
-   Build with `docker build -t andertrack-telemetry services/telemetry` or run
-   `node services/telemetry/server.mjs` with Node 22. Inject these environment
-   variables through the host's secret manager (never a frontend `.env`):
-   - `SUPABASE_URL`: the backend project HTTPS URL
-   - `SUPABASE_SERVICE_ROLE_KEY`: server-only Supabase service-role key
-   - `TELEMETRY_ORGANIZATION_ID`: one trusted organization UUID per collector
-   - `TELEMETRY_INGEST_TOKEN`: separate random bearer token, at least 32 characters
-   - `PORT`: optional, defaults to 8080
-4. Terminate TLS in a trusted reverse proxy; restrict ingress to authorized
-   gateways and enforce request/rate/connection limits. Do not expose port 8080
-   publicly without TLS. Rotate both secrets using the hosting secret manager.
-5. Set `VITE_ELD_TELEMETRY_ENABLED=true` for the Andertrack frontend only after
-   the schema/security checks pass, then rebuild. Default is off, so an unapplied
-   schema does not affect existing production. No service-role key belongs in a
-   `VITE_*` variable. Planners subscribe to private `telemetry:<organization UUID>`
-   channels; drivers retain the existing self-only GPS path. State hydrates on
-   connect/reconnect and every 30 seconds as fallback.
+   access**, after checking effects on existing channels. Verify anonymous users,
+   drivers and other tenants cannot read/join; own-tenant planners can.
+3. Host Vector on an always-on container/VM, not in the Vercel frontend. Build:
+   `docker build -t andertrack-telemetry services/telemetry`.
+   Mount a persistent writable volume at `/var/lib/vector`. Inject through the
+   host secret manager, never Git or `VITE_*` variables:
+   - `SUPABASE_URL=https://whzihzqtyfagxgysbaod.supabase.co`
+   - `SUPABASE_SERVICE_ROLE_KEY`: matching server-only service-role key
+   - `TELEMETRY_ORGANIZATION_ID`: lowercase UUID of the trusted organization
+   - `TELEMETRY_INGEST_TOKEN`: strong random secret, at least 32 characters
+4. Put a TLS reverse proxy in front of port 8080. Restrict ingress to trusted
+   gateways, limit request bodies to 16 KiB, rate-limit requests/connections and
+   enforce timeouts. Basic auth is safe only over HTTPS. The proxy must not log
+   authorization headers or telemetry payloads.
+5. Before deployment run, with these variables supplied securely:
+   `vector validate --no-environment services/telemetry/vector.toml` and
+   `vector test services/telemetry/vector.toml`. `sh services/telemetry/check.sh` runs these
+   offline checks using non-secret test values when Vector is installed. Also exercise both HTTP sinks
+   against staging: transform tests do not prove live auth, RLS or wire behavior.
+6. Set frontend `VITE_SUPABASE_URL` and the matching
+   `VITE_SUPABASE_PUBLISHABLE_KEY` for the intended environments. Enable
+   `VITE_ELD_TELEMETRY_ENABLED=true` only after staging checks, then rebuild.
+   URL/key changes alone do not apply SQL or start Vector.
 
-## Input contract
+## HTTP input
 
-POST `/telemetry`, `Content-Type: application/json`, `Authorization: Bearer <ingest token>`.
-One object per request; send approximately once per second per unit:
+POST `/telemetry` with JSON and **Basic authentication** (username `telemetry`,
+password from `TELEMETRY_INGEST_TOKEN`). This replaces the Node collector's
+Bearer ingress contract; update gateway authentication accordingly.
 
 ```json
 {"truck_id":"TRK-018","speed_kmh":72.5,"fuel_pct":64,"odometer_km":183420.2,"lon":-74.0,"lat":40.7,"alt":12}
 ```
 
-All measurements must be JSON numbers. Coordinates, speed, fuel and odometer are
-required and range-checked. Altitude defaults to zero. `truck_id` must match an
-existing enabled vehicle's `unit_number` in the collector's fixed organization.
-Device organization/driver IDs, WKT and timestamps are ignored. `updated_at` is
-collector receipt time; gateways should not replay old samples as current data.
-MQTT/ELD vendors need a gateway forwarding this HTTP contract; this is not an MQTT
-broker or a vendor-specific ELD adapter.
+Send one object per request, approximately once per second per unit. Numbers
+must be JSON numbers. Altitude defaults to zero. The device cannot choose the
+organization, driver identity, WKT or timestamp. `updated_at` is receipt time;
+do not replay historical samples as current positions. Invalid transform events
+are dropped; a successful HTTP source response is not proof of valid telemetry
+or successful delivery to both sinks. Monitor Vector's internal component errors
+and discarded events. MQTT/ELD vendors require an MQTT-to-HTTP gateway; this is
+not an MQTT broker or a vendor-specific ELD adapter.
 
-## Behavior and limits
+## Sink semantics and limitations
 
-- Broadcast follows each accepted input; it does not manufacture 1 Hz ticks.
-  Private Broadcast is ephemeral; disconnected clients recover latest persisted
-  state, not every animation frame. This feeds existing map position rendering,
-  not new interpolation/3D animation logic.
-- Latest state is coalesced per truck, at most 50 distinct trucks per 10-second
-  flush. SQL rejects unknown/disabled inventory and older writes cannot overwrite
-  newer state. A failed batch is retained and retried every 10 seconds. Inventory
-  deletion/disabling during a pending batch can block it; drain before disabling
-  and alert operators on repeated flush failures. No history table is introduced.
-- Buffer is bounded to 1,000 trucks and 50 concurrent requests, in memory only.
-  A 202 means queued, **not durably persisted**. Process failure can lose pending
-  ticks; production lossless ingestion needs a durable queue/outbox upstream.
-  Gateways must back off/retry 503s; the two sinks are not transactional and
-  retries may produce duplicate broadcasts. Use a single collector per tenant
-  to preserve receipt order. For sustained >50 distinct trucks / 10 seconds,
-  increase capacity deliberately or partition collectors and test throughput.
-- Map association requires verified inventory and exactly one active assigned
-  driver. No driver is inferred from device-supplied identity. Existing freshness
-  checks still hide stale positions. Unassigned trucks persist but are not shown
-  as driver markers. Fuel/odometer persist for future UI; no invented HUD values.
+- Broadcast sends one properly wrapped `messages` object per HTTP request, with
+  `private=true`, topic `telemetry:<organization UUID>` and event `telemetry`.
+  Input cadence drives animation updates; no synthetic 1 Hz ticks or new 3D
+  interpolation are introduced. Its bounded memory buffer blocks when full.
+- State uses comma-delimited JSON inside an explicit RPC object with `p_ticks`
+  array, up to 50 ticks per batch or a 10-second timeout (not a guaranteed exact
+  10-second interval). The SQL deduplicates repeated truck IDs, choosing the
+  newest receipt timestamp, then resolves existing enabled inventory and builds
+  PostGIS PointZ. Equal timestamp ties have no guaranteed ordering.
+- A 512 MiB disk buffer retains pending state on the mounted volume across
+  restarts, subject to Vector's synchronization window. Acknowledgements are not
+  enabled: ingress success is not a durable or end-to-end sink acknowledgement.
+  Retryable HTTP failures are retried; permanent errors (including bad SQL,
+  credentials or unknown/disabled inventory) can discard batches. Monitor errors
+  and test upstream retry/outbox behavior; this is not a lossless guarantee.
+- Unlike the old Node collector, Vector does not query inventory before Broadcast.
+  Only trusted gateways should send fleet data. Unknown trucks may be broadcast
+  but are ignored by the frontend inventory association and rejected by SQL.
+  One unknown/disabled unit can reject its entire batch. Validate unit provisioning
+  upstream and test this failure mode before enabling production.
+- The sinks are independent, not transactional. One can succeed while the other
+  fails. Retries can duplicate Broadcasts. Use one instance per tenant and test
+  capacity and backpressure under load. Historical state is not stored.
+- Private channel hydration/reconnect and 30-second polling recover persisted
+  latest state. Map association requires verified inventory and an unambiguous
+  active driver assignment. Drivers retain the existing self-only GPS path;
+  unassigned trucks do not become driver markers. Fuel/odometer are persisted,
+  not invented HUD values.
 
-References: [Broadcast envelope](https://supabase.com/docs/guides/realtime/broadcast),
+References: [Vector HTTP sink](https://vector.dev/docs/reference/configuration/sinks/http/),
+[HTTP source](https://vector.dev/docs/reference/configuration/sources/http_server/),
+[Supabase Broadcast](https://supabase.com/docs/guides/realtime/broadcast),
 [private channel authorization](https://supabase.com/docs/guides/realtime/authorization).
